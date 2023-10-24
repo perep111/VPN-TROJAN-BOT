@@ -1,16 +1,18 @@
 import hashlib
 import uuid
-
+import asyncio
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from config import dp, bot, client
 from func import main_menu, connect_vpn, generate_password, pre_pay_keyboard, kb_func, instrukt_kb
+from func import set_message_deletion_timer
 from aiogram import types
 from aiogram.types import Message
 from database import fetch_data
 
 
 admin = [1348491834]
+delayed_message_flag = False
 
 
 class UserState(StatesGroup):
@@ -121,6 +123,9 @@ async def menu_message(call: types.CallbackQuery, state: FSMContext):
                                 message_id=call.message.message_id,
                                 text='Жми кнопку "Оплатить" и после оплаты нажми\n ПРОВЕРКА ОПЛАТЫ',
                                 reply_markup=kb_func(password))
+
+    asyncio.create_task(set_message_deletion_timer(call.from_user.id, call.message.message_id, state))
+
     await UserState.PROCESS_ORDER.set()
 
 
@@ -184,6 +189,3 @@ async def push_payment(call: types.CallbackQuery, state: FSMContext):
 
     except Exception as e:
         await bot.send_message(chat_id='1348491834', text=f'ошибка оплаты для юзера {user}{str(e)}')
-
-
-

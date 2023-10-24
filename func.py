@@ -1,12 +1,12 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from config import *
-import subprocess
-import os
+import asyncio
 import random
 import string
 from yoomoney import Quickpay
+from aiogram.dispatcher import FSMContext
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import types
 
 
 async def set_default_commands(dip):
@@ -71,6 +71,21 @@ def generate_password(length=15):
     password = ''.join(random.choice(characters) for i in range(length))
     return password
 
+
+async def set_message_deletion_timer(chay_id, mes_id, state: FSMContext):
+    await asyncio.sleep(1500)  # Подождать 30 минут (1800 секунд)
+
+    # Получить состояние пользователя
+    user_state = await state.get_state()
+
+    if user_state:
+        try:
+            # Если пользователь все еще находится в состоянии "PROCESS_ORDER", удалите сообщение
+            await bot.delete_message(chat_id=chay_id, message_id=mes_id)
+            await bot.send_message(chat_id=chay_id, text='Ссылка на оплату устарела', reply_markup=connect_vpn)
+            await state.finish()  # Завершите состояние
+        except Exception as e:
+            print(e)
 
 # async def add_user(user, gb):
 #
