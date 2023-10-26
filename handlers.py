@@ -1,7 +1,9 @@
 import hashlib
 import uuid
+import logging
 import asyncio
 from aiogram.dispatcher import FSMContext
+from aiogram.utils.exceptions import NetworkError, RetryAfter
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from config import dp, bot, client
 from func import main_menu, connect_vpn, generate_password, pre_pay_keyboard, kb_func, instrukt_kb
@@ -17,6 +19,18 @@ delayed_message_flag = False
 
 class UserState(StatesGroup):
     PROCESS_ORDER = State()
+
+
+@dp.errors_handler()
+async def error_handler(update, exception):
+    if isinstance(exception, NetworkError):
+        logging.error(f"NetworkError: {exception}")
+        # Дополнительная обработка или уведомления об ошибке
+        return True  # Отмечаем ошибку как обработанную
+
+    elif isinstance(exception, RetryAfter):
+        await asyncio.sleep(exception.timeout)
+        return True  # Обработка завершена, можно продолжить выполнение
 
 
 @dp.message_handler(commands=['start'])
