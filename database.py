@@ -14,8 +14,9 @@ mysql_config = {
 
 # Создайте соединение с базой данных
 async def create_db_pool():
+    global db_pool
     try:
-        pool = await aiomysql.create_pool(
+        db_pool = await aiomysql.create_pool(
             host=mysql_config["host"],
             port=mysql_config["port"],
             user=mysql_config["user"],
@@ -23,23 +24,26 @@ async def create_db_pool():
             db=mysql_config["db"],
             autocommit=True,  # Для автоматической фиксации изменений
             cursorclass=aiomysql.cursors.DictCursor,  # Для получения результатов как словарей
-            loop=asyncio.get_event_loop()
         )
-        return pool
+        print("подлючение все четко")
+        return db_pool
     except aiomysql.MySQLError as e:
         print(f"Ошибка при подключении к базе данных 1: {e}")
         return
 
 
-db_pool = asyncio.get_event_loop().run_until_complete(create_db_pool())
-
-
 async def fetch_data(query, args=None):
+    global db_pool
+    if db_pool is None:
+        raise Exception("База данных не инициализирована. Вызовите init_db_pool.")
+
     try:
+
         async with db_pool.acquire() as connection:
             async with connection.cursor() as cursor:
                 await cursor.execute(query, args)
                 result = await cursor.fetchall()
+                # print(result)
         return result
 
     except Exception as e:

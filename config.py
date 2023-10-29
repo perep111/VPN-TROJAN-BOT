@@ -7,6 +7,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# webhook settings
+WEBHOOK_HOST = 'https://24perep.ru'
+WEBHOOK_PATH = '/webhook'
+WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
+
+# webserver settings
+WEBAPP_HOST = 'localhost'  # or ip
+WEBAPP_PORT = 88
+
 API_TOKEN = os.getenv('API_TOKEN')
 
 

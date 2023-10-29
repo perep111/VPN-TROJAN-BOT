@@ -66,6 +66,9 @@ async def get_data(msg: Message):
     # Теперь вы можете обработать результат и отправить его в чат
     # Проверьте, что result не пустой
     if data:
+        # quota = data[0][3]
+        # download_value = data[0][4]
+        # upload_value = data[0][5]
         quota = data[0]['quota']
         download_value = data[0]['download']
         upload_value = data[0]['upload']

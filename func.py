@@ -81,41 +81,11 @@ async def set_message_deletion_timer(chay_id, mes_id, state: FSMContext):
     if user_state:
         try:
             # Если пользователь все еще находится в состоянии "PROCESS_ORDER", удалите сообщение
-            await bot.delete_message(chat_id=chay_id, message_id=mes_id)
-            await bot.send_message(chat_id=chay_id, text='Ссылка на оплату устарела', reply_markup=connect_vpn)
+            await bot.edit_message_text(chat_id=chay_id,
+                                        message_id=mes_id,
+                                        text='Ссылка на оплату устарела',
+                                        reply_markup=connect_vpn)
             await state.finish()  # Завершите состояние
         except Exception as e:
             print(e)
 
-# async def add_user(user, gb):
-#
-#     # Определите абсолютный путь к trojan_manager.py
-#     trojan_manager_path = "/root/trojan-manager/trojan_manager.py"
-#     password = generate_password()
-#     # Создайте список команд, которые вы хотите выполнить
-#     commands = [
-#         f"Adduser {user} {password}",
-#         f"Setquota {user} {gb}"
-#     ]
-#     try:
-#
-#         # Запустите интерактивное приложение Trojan Manager и выполните команды
-#         child = subprocess.Popen(["python3", trojan_manager_path, "int"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-#                                  stderr=subprocess.PIPE)
-#         child.stdin.write(b'\n')  # Добавьте символ новой строки для ожидания ввода
-#         child.stdin.flush()
-#
-#         for command in commands:
-#             child.stdin.write(command.encode('utf-8') + b'\n')
-#             child.stdin.flush()
-#
-#         child.stdin.close()
-#         child.wait()
-#
-#     except subprocess.CalledProcessError as e:
-#         await bot.send_message(chat_id="1348491834", text=f"конкретная Ошибка создания конф: {e}")
-#         return False
-#
-#     return password
-#
-#
