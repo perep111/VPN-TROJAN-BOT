@@ -140,10 +140,9 @@ async def menu_message(call: types.CallbackQuery, state: FSMContext):
                                 message_id=call.message.message_id,
                                 text='Жми кнопку "Оплатить" и после оплаты нажми\n ПРОВЕРКА ОПЛАТЫ',
                                 reply_markup=kb_func(password))
+    await UserState.PROCESS_ORDER.set()
 
     asyncio.create_task(set_message_deletion_timer(call.from_user.id, call.message.message_id, state))
-
-    await UserState.PROCESS_ORDER.set()
 
 
 @dp.callback_query_handler(text='verification', state=UserState.PROCESS_ORDER)

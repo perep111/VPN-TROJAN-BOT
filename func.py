@@ -9,10 +9,10 @@ from aiogram.dispatcher import FSMContext
 from aiogram import types
 
 
-async def set_default_commands(dip):
-    await dip.bot.set_my_commands([
-        types.BotCommand("start", "Главное меню"),
-    ])
+# async def set_default_commands(dip):
+#     await dip.bot.set_my_commands([
+#         types.BotCommand("start", "Главное меню"),
+#     ])
 
 
 main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
@@ -73,12 +73,12 @@ def generate_password(length=15):
 
 
 async def set_message_deletion_timer(chay_id, mes_id, state: FSMContext):
-    await asyncio.sleep(1500)  # Подождать 30 минут (1800 секунд)
+    await asyncio.sleep(600)  # Подождать 30 минут (1800 секунд)
 
     # Получить состояние пользователя
     user_state = await state.get_state()
 
-    if user_state:
+    if user_state == "UserState:PROCESS_ORDER":
         try:
             # Если пользователь все еще находится в состоянии "PROCESS_ORDER", удалите сообщение
             await bot.edit_message_text(chat_id=chay_id,

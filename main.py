@@ -36,7 +36,7 @@ async def on_shutdown(dp):
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
+    # loop = asyncio.get_event_loop()
     # loop.create_task(check_users_periodically())
     # loop.create_task(create_db())
     # executor.start_polling(dp,
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         webhook_path=WEBHOOK_PATH,
         on_startup=on_startup,
         on_shutdown=on_shutdown,
-        skip_updates=True,
+        skip_updates=False,
         host=WEBAPP_HOST,
         port=WEBAPP_PORT,
     )
