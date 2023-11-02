@@ -17,6 +17,8 @@ WEBAPP_HOST = 'localhost'  # or ip
 WEBAPP_PORT = 88
 
 API_TOKEN = os.getenv('API_TOKEN')
+TOKEN_UKASSA_TEST = os.getenv('TOKEN_UKASSA_TEST')
+TOKEN_UKASSA = os.getenv('TOKEN_UKASSA')
 
 
 TOKEN_CLIENT = os.getenv('TOKEN_CLIENT')
