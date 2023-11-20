@@ -1,8 +1,9 @@
-
 import aiomysql
 import aiosqlite
 from datetime import datetime, timedelta
 from remove import remove_wireguard_user
+from config import bot
+from pay_conf import pay_conf_trojan
 
 
 # Ваши настройки для подключения к MySQL
@@ -63,7 +64,9 @@ async def create_db():
             user_id INTEGER PRIMARY KEY,
             join_date DATE,
             is_vpn INTEGER,
-            end_date DATE
+            end_date DATE,
+            test INTEGER,
+            refer INTEGER
         )
     ''')
     await cursor.execute('''
@@ -71,7 +74,9 @@ async def create_db():
             user_id INTEGER PRIMARY KEY,
             join_date DATE,
             is_vpn INTEGER,
-            end_date DATE
+            end_date DATE,
+            test INTEGER,
+            refer INTEGER
         )
     ''')
 
@@ -79,16 +84,30 @@ async def create_db():
     await connection.close()
 
 
-async def write_to_db(user_id, table_name, day):
+async def check_args(args, user_id: int):
+    if args.isnumeric():
+        if int(args) == user_id:
+            args = '0'
+            return args
+
+        elif is_user_in_db('trojan_users', args) or is_user_in_db('users', args):
+            return args
+
+
+
+
+
+
+async def write_to_db(user_id, table_name, refer, is_vpn=0, test=0):
     connection = await aiosqlite.connect('vpn-user-test.db')
     cursor = await connection.cursor()
     join_date = datetime.now()
     join_date_str = join_date.strftime('%Y-%m-%d %H:%M:%S')
-    one_month_go = join_date + timedelta(days=day)
-    one_month_go_str = one_month_go.strftime('%Y-%m-%d %H:%M:%S')
+    # one_month_go = join_date + timedelta(days=day)
+    # one_month_go_str = one_month_go.strftime('%Y-%m-%d %H:%M:%S')
 
-    await cursor.execute(f'INSERT INTO {table_name} (user_id, join_date, is_vpn, end_date) VALUES (?, ?, ?, ?)',
-                         (user_id, join_date_str, 1, one_month_go_str))
+    await cursor.execute(f'INSERT INTO {table_name} (user_id, join_date, is_vpn, refer, test) VALUES (?, ?, ?, ?, ?)',
+                         (user_id, join_date_str, is_vpn, refer, test))
 
     await connection.commit()
     await connection.close()
@@ -132,7 +151,7 @@ async def check_users_vpn_service():
 
     # Удаление учетки каждого пользователя из trojan
     for user_id in users_to_delete_trojan:
-        # await remove_trojan_user(user_id[0])                                           сделать удаление из базы троян
+        await remove_trojan_user(user_id[0])                                         #сделать удаление из базы троян
         await is_vpn_false(user_id[0], table_name='trojan_users')
 
     await connection.commit()
@@ -151,43 +170,52 @@ async def is_user_in_db(table_name, user_id: int) -> bool:
     return result[0] > 0
 
 
-async def update_users_db(table_name, user_id):
+async def how_users_in_db(table_name):
+    connection = await aiosqlite.connect('vpn-user-test.db')
+    cursor = await connection.cursor()
+
+    await cursor.execute(f'SELECT COUNT(*) FROM {table_name} WHERE is_vpn = ?', (1,))
+    result = await cursor.fetchone()
+
+    await connection.close()
+
+    return result[0]
+
+
+async def update_users_db(table_name, user_id, days, test=0):
     connection = await aiosqlite.connect('vpn-user-test.db')
     cursor = await connection.cursor()
 
     now_date = datetime.now()
     now_date_str = now_date.strftime('%Y-%m-%d %H:%M:%S')
-    one_month_go = now_date + timedelta(days=30)
+    one_month_go = now_date + timedelta(days=days)
     one_month_go_str = one_month_go.strftime('%Y-%m-%d %H:%M:%S')
 
     try:
-        print('1')
 
         await cursor.execute(f'SELECT end_date FROM {table_name} WHERE user_id = ?', (user_id,))
         date_in_db = await cursor.fetchone()
 
         if date_in_db[0]:
-            print(date_in_db[0])
-            print(now_date_str)
 
             if date_in_db[0] <= now_date_str:
 
-                print('3')
-                await cursor.execute(f'UPDATE {table_name} SET end_date = ?, is_vpn = ? WHERE user_id = ?',
-                                     (one_month_go_str, 1, user_id))
+                await cursor.execute(f'UPDATE {table_name} SET end_date = ?, is_vpn = ?, test = ? WHERE user_id = ?',
+                                     (one_month_go_str, 1, user_id, test))
 
             elif date_in_db[0] >= now_date_str:
                 date_obj = datetime.strptime(date_in_db[0], '%Y-%m-%d %H:%M:%S')
-                one_month_later = date_obj + timedelta(days=30)
+                one_month_later = date_obj + timedelta(days=days)
                 one_month_later_str = one_month_later.strftime('%Y-%m-%d %H:%M:%S')
 
-                await cursor.execute(f'UPDATE {table_name} SET end_date = ?, is_vpn = ? WHERE user_id = ?',
-                                     (one_month_later_str, 1, user_id))
+                await cursor.execute(f'UPDATE {table_name} SET end_date = ?, is_vpn = ?, test = ? WHERE user_id = ?',
+                                     (one_month_later_str, 1, user_id, test))
 
         else:
+
             await cursor.execute(
-                f'INSERT OR REPLACE INTO {table_name} (end_date, is_vpn, WHERE user_id) VALUES (?, ?, ?,)',
-                (one_month_go_str, 1, user_id)
+                f'INSERT OR REPLACE INTO {table_name} (end_date, is_vpn, test, WHERE user_id) VALUES (?, ?, ?, ?,)',
+                (one_month_go_str, 1, test, user_id)
             )
 
     except Exception as e:
@@ -244,3 +272,27 @@ async def is_user_in_wireguard(user_id: int) -> bool:
     await connection.close()
 
     return result[0] > 0
+
+
+async def is_test(tale_name, user_id: int) -> bool:
+    connection = await aiosqlite.connect('vpn-user-test.db')
+    cursor = await connection.cursor()
+
+    await cursor.execute(f'SELECT COUNT(*) FROM {tale_name} WHERE user_id = ? AND test = ?',
+                         (user_id, True))
+    result = await cursor.fetchone()
+
+    await connection.close()
+
+    return result[0] > 0
+
+
+async def remove_trojan_user(user_id):
+    user = f"{user_id}rac"
+    await fetch_data("DELETE FROM users WHERE username = '{}'".format(user,))
+    await bot.send_message(chat_id=user_id,
+                           text='<b>😢 Время вашего VPN протокол trojan закончилось,\n'
+                                'но вы можете продолжить пользоваться сервисом VPN после оплаты</b>\n\n'
+                                'Продлевайте ваш VPN заранее, оставшиеся дни и трафик <b>НЕ СГОРЯТ</b>, '
+                                'они добавятся к новому тарифу')
+    await pay_conf_trojan(user_id)

@@ -18,7 +18,9 @@ main_menu = ReplyKeyboardMarkup(resize_keyboard=True)
 my_vpn_button = KeyboardButton(text='🔐 Мой VPN')
 tarif_button = KeyboardButton(text='💸 Тарифы')
 support_button = KeyboardButton(text='🤯 Поддержка')
+instrukt_button = KeyboardButton(text='🎯 Как настроить VPN')
 main_menu.add(my_vpn_button, tarif_button, support_button)
+main_menu.add(instrukt_button)
 
 
 pre_pay_keyboard_tro = InlineKeyboardMarkup(row_width=1)  # Можете указать другое значение row_width
@@ -81,12 +83,23 @@ async def send_quota(msg: types.Message, quota, pay_id=None):
         "INSERT INTO users (username, password, quota) VALUES ('{}', '{}', '{}')".format(user,
                                                                                          fullhash,
                                                                                          quota))
-    url = f"trojan://{password_hash}@24perep.ru:8888?security=tls&sni=24perep.ru&alpn=http%2F1.1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#{user}"
+    url = f"trojan://{password_hash}@24perep.ru:8888?security=tls&sni=24perep.ru&alpn=http%2F1." \
+          f"1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#{user}"
 
     if pay_id:
         await bot.send_message(chat_id=msg.chat.id, text=f'Платежный идентификатор\n'
                                                          f'{pay_id}')
-    await bot.send_message(chat_id=msg.chat.id, text='ваша ссылка, просто кликните на нее что бы скопировать')
+    # await bot.send_message(chat_id=msg.chat.id, text='ваша ссылка, просто кликните на нее что бы скопировать')
+    # await bot.send_message(chat_id=msg.chat.id, text=f'<code>{url}</code>', reply_markup=main_menu)
+
+    await bot.send_photo(chat_id=msg.chat.id,
+                         photo=f'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data={url}',
+                         caption=f'ваша ссылка, просто нажмите на нее что бы скопировать:\n\n'
+                                 '⚠️Это ваша личная ссылка, не давайте ее никому, если не хотите поделиться'
+                                 ' своим трафиком.\n\n'
+                                 'Для подключения <b>на другом устройстве можете использовать этот QR-код на '
+                                 'следующем шаге</b>. Ваша ссылка и QR-код подходят для подключения неограниченного '
+                                 'количества устройств. Каждое подключенное устройство будет расходовать ваш трафик.')
     await bot.send_message(chat_id=msg.chat.id, text=f'<code>{url}</code>', reply_markup=main_menu)
 
     asyncio.create_task(delayed_task(chat_id=msg.chat.id))
