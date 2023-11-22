@@ -1,14 +1,15 @@
 import logging
 import asyncio
 from aiogram.utils.exceptions import NetworkError, RetryAfter
+from aiogram.utils.deep_linking import get_start_link
 from config import dp, bot
 from pay_conf import pay_conf_wireguard, pay_conf_trojan
 from func import main_menu, connect_vpn, instrukt_kb, extend_vpn
 from func import pre_pay_keyboard_tro, pre_pay_keyboard_wir, delayed_task, send_quota, send_message_mi, send_conf
-from func import add_wireguard_user, send_to_all_users, send_video_from_file
+from func import add_wireguard_user, send_to_all_users, send_video_from_file, check_args
 from aiogram import types
 from aiogram.types import ContentType
-from database import check_args, is_test
+from database import is_test, count_refs
 from database import fetch_data, update_users_db, read_to_db_end_date, is_user_in_db, write_to_db, is_user_in_wireguard
 from admin import get_system_info
 from aiogram.types import ParseMode
@@ -34,24 +35,27 @@ async def error_handler(update, exception):
 
 @dp.message_handler(commands=['info'])
 async def send_info(message: types.Message):
-    system_info = await get_system_info()
-    await message.answer(system_info, parse_mode=ParseMode.MARKDOWN)
+    if message.from_user.id in admin:
+        system_info = await get_system_info()
+        await message.answer(system_info, parse_mode=ParseMode.MARKDOWN)
+    else:
+        await message.answer('соси')
 
 
-@dp.message_handler(commands=['st'])
-async def process_start_command(msg: types.Message):
-    url = '<code>trojan://sq2nmm93McA7BSa@24perep.ru:' \
-          '8888?security=tls&sni=24perep.ru&alpn=http%2F1.' \
-          '1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#1348491834rac</code>'
-    await bot.send_photo(chat_id=msg.chat.id,
-                         photo=f'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data={url}',
-                         caption=f'ваша ссылка, просто нажмите на нее что бы скопировать:\n\n'
-                                 '⚠️Это ваша личная ссылка, не давайте ее никому, если не хотите поделиться'
-                                 ' своим трафиком.\n\n'
-                                 'Для подключения <b>на другом устройстве можете использовать этот QR-код на '
-                                 'следующем шаге</b>. Ваша ссылка и QR-код подходят для подключения неограниченного '
-                                 'количества устройств. Каждое подключенное устройство будет расходовать ваш трафик.')
-    await bot.send_message(chat_id=msg.chat.id, text=url)
+# @dp.message_handler(commands=['st'])
+# async def process_start_command(msg: types.Message):
+#     url = '<code>trojan://sq2nmm93McA7BSa@24perep.ru:' \
+#           '8888?security=tls&sni=24perep.ru&alpn=http%2F1.' \
+#           '1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#1348491834rac</code>'
+#     await bot.send_photo(chat_id=msg.chat.id,
+#                          photo=f'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data={url}',
+#                          caption=f'ваша ссылка, просто нажмите на нее что бы скопировать:\n\n'
+#                                  '⚠️Это ваша личная ссылка, не давайте ее никому, если не хотите поделиться'
+#                                  ' своим трафиком.\n\n'
+#                                  'Для подключения <b>на другом устройстве можете использовать этот QR-код на '
+#                                  'следующем шаге</b>. Ваша ссылка и QR-код подходят для подключения неограниченного '
+#                                  'количества устройств. Каждое подключенное устройство будет расходовать ваш трафик.')
+#     await bot.send_message(chat_id=msg.chat.id, text=url)
 
 
 @dp.message_handler(commands=['read'])
@@ -66,10 +70,61 @@ async def all_users(message: types.Message):
 @dp.message_handler(commands=['start'])
 async def process_start_command(msg: types.Message):
     user_id = msg.from_user.id
+
     referal_args = msg.get_args()  # /start 123123
     check_referal_args = await check_args(referal_args, msg.from_user.id)
-    await write_to_db(msg.from_user.id, 'users', check_referal_args)
-    await write_to_db(msg.from_user.id, 'trojan_users', check_referal_args)
+
+    user_is_wg = await is_user_in_db('users', user_id)
+    user_is_tj = await is_user_in_db('trojan_users', user_id)
+
+    if not user_is_wg and not user_is_tj:
+        await write_to_db(user_id=user_id, table_name='users', refer=check_referal_args)
+        await write_to_db(user_id=user_id, table_name='trojan_users', refer=check_referal_args)
+        try:
+            if check_referal_args and check_referal_args != '0':
+                old_user_is_wg = await is_user_in_wireguard(user_id=check_referal_args)
+                old_user_is_tj = await fetch_data(
+                    "SELECT * FROM users WHERE username = '{}'".format(f"{check_referal_args}rac",))
+
+                if old_user_is_wg and not old_user_is_tj:
+                    await update_users_db(table_name='users', user_id=check_referal_args, days=15)
+                    await bot.send_message(chat_id=check_referal_args,
+                                           text='по вашей ссылке зарегистрировались\n\n'
+                                                'Вам добавлено 15 дней')
+                elif old_user_is_tj:
+                    await fetch_data(
+                        "UPDATE users SET quota = quota + {} WHERE username = '{}'".format('26843545600',
+                                                                                           f"{check_referal_args}rac"))
+                    await update_users_db(table_name='trojan_users', user_id=check_referal_args, days=15)
+                    await bot.send_message(chat_id=check_referal_args,
+                                           text='по вашей ссылке зарегистрировались\n\n'
+                                                'Вам добавлено 15 дней и 25GB протокола trojan')
+                elif not old_user_is_tj and not old_user_is_wg:
+
+                    await send_quota(check_referal_args, quota=26843545600)
+                    if not await is_user_in_db(table_name='trojan_users', user_id=check_referal_args):
+                        await write_to_db(table_name='trojan_users', user_id=check_referal_args, refer=None, is_vpn=1,
+                                          days=15)
+                    else:
+                        await update_users_db(table_name='trojan_users', user_id=check_referal_args, days=15)
+                    await bot.send_message(chat_id=check_referal_args,
+                                           text='по вашей ссылке зарегистрировались\n\n'
+                                                'Вам добавлено 15 дней и 25GB')
+
+            await bot.send_message(chat_id=user_id, text='Вы воспользовались реферальной ссылкой')
+
+        except Exception as a:
+            print(a)
+    #
+    # elif not user_is_tj and user_is_wg:
+    #     await write_to_db(user_id=user_id, table_name='trojan_users', refer=check_referal_args)
+    #     bot.send_message(chat_id=check_referal_args,
+    #                      text='по вашей ссылке зарегестрировались')
+    #
+    # elif not user_is_wg and user_is_tj:
+    #     await write_to_db(user_id=user_id, table_name='users', refer=check_referal_args)
+    #     bot.send_message(chat_id=check_referal_args,
+    #                      text='по вашей ссылке зарегестрировались')
 
     if user_id:
         await bot.send_message(chat_id=msg.chat.id,
@@ -94,6 +149,15 @@ async def process_start_command(msg: types.Message):
         await bot.send_message(chat_id=msg.chat.id,
                                text='Вам не получится пользоваться нашим сервисом\n'
                                     'т.к в вашем телеграм профиле нет user id')
+
+
+@dp.message_handler(commands=['ref'])
+async def refferal(mess: types.Message):
+    ref_link = await get_start_link(payload=mess.from_user.id)
+    count = await count_refs(mess.from_user.id)
+    await mess.answer(f'У тебя  рефералов: {count}\n'
+                      f'Твоя реферальная ссылка\n'
+                      f'<code>{ref_link}</code>')
 
 
 @dp.message_handler(text='💸 Тарифы')
@@ -203,17 +267,24 @@ async def get_data(msg: types.Message):
 @dp.callback_query_handler(text='trial_tariff')
 async def trial_tariff(call: types.CallbackQuery):
     await call.answer()
-    data = await is_test(user_id=call.from_user.id, tale_name='trojan_users')
-    data_tro = await fetch_data("SELECT * FROM users WHERE username = '{}'".format(f"{call.from_user.id}rac", ))
+    data_test = await is_test(user_id=call.from_user.id, tale_name='trojan_users')
+    data_trojan = await fetch_data("SELECT * FROM users WHERE username = '{}'".format(f"{call.from_user.id}rac", ))
 
-    if not data and not data_tro:
-        await send_quota(call.message, quota='2147483648')
+    if not data_test and not data_trojan:
+        if await is_user_in_db(table_name='trojan_users', user_id=call.from_user.id):
+            await update_users_db(table_name='trojan_users', user_id=call.from_user.id, days=7, test=1)
+
+        else:
+            await write_to_db(user_id=call.from_user.id, table_name='trojan_users', refer=0, days=7, test=1)
+
+        await send_quota(user_id=call.from_user.id, quota='2147483648')
+
         await bot.send_message(chat_id=call.message.chat.id,
                                text='Вам доступно 2GB нажмите Мой VPN, что бы узнать остаток своего трафика',
                                reply_markup=main_menu)
-        await update_users_db(table_name='trojan_users', user_id=call.from_user.id, days=7, test=1)
 
     else:
+
         await bot.send_message(chat_id=call.from_user.id,
                                text='🥹 К сожалению пробный тариф доступен только новым пользователям протокола trojan',
                                reply_markup=main_menu)
@@ -222,7 +293,7 @@ async def trial_tariff(call: types.CallbackQuery):
 @dp.callback_query_handler(text="extend_tariff")
 async def extend_tariff(call: types.CallbackQuery):
     await call.answer()
-    user = f"{call.message.chat.id}rac"
+    user = f"{call.from_user.id}rac"
     data = await fetch_data("SELECT * FROM users WHERE username = '{}'".format(user, ))
     wireguard_is = await is_user_in_wireguard(user_id=call.from_user.id)
 
@@ -266,7 +337,7 @@ async def add_wireguard(call: types.CallbackQuery):
         await send_message_mi(user=call.from_user.id, text='подключил пробный WireGuard', name=call.from_user.username)
         await send_conf(user_id=call.from_user.id)
         await update_users_db(table_name='users', user_id=call.from_user.id, days=10, test=1)
-        await bot.send_message(chat_id=call.from_user.id,
+        await bot.send_message(chat_id=call.message.chat.id,
                                text="Вам активирован пробный период: 10 дней",
                                reply_markup=main_menu)
         await send_video_from_file(chat_id=call.message.chat.id)
@@ -343,8 +414,8 @@ async def process_pay(message: types.Message):
         if not data and not trojan_is:
             print('no data')
 
-            await send_quota(message, quota=quota, pay_id=pay_id)
-            await write_to_db(table_name='trojan_users', user_id=user_id, day=30, is_vpn=1)
+            await send_quota(message.from_user.id, quota=quota, pay_id=pay_id)
+            await write_to_db(table_name='trojan_users', user_id=user_id, refer=0, is_vpn=1, days=30)
 
         elif data and trojan_is:
 
@@ -364,7 +435,7 @@ async def process_pay(message: types.Message):
             await update_users_db(table_name='trojan_users', user_id=user_id, days=30)
 
         elif trojan_is and not data:
-            await send_quota(message, quota=quota, pay_id=pay_id)
+            await send_quota(message.from_user.id, quota=quota, pay_id=pay_id)
             await update_users_db(table_name='trojan_users', user_id=user_id, days=30)
 
     elif message.successful_payment.invoice_payload == 'payment_wireguard':

@@ -76,7 +76,8 @@ async def create_db():
             is_vpn INTEGER,
             end_date DATE,
             test INTEGER,
-            refer INTEGER
+            refer INTEGER,
+            password TEXT
         )
     ''')
 
@@ -84,30 +85,21 @@ async def create_db():
     await connection.close()
 
 
-async def check_args(args, user_id: int):
-    if args.isnumeric():
-        if int(args) == user_id:
-            args = '0'
-            return args
-
-        elif is_user_in_db('trojan_users', args) or is_user_in_db('users', args):
-            return args
-
-
-
-
-
-
-async def write_to_db(user_id, table_name, refer, is_vpn=0, test=0):
+async def write_to_db(user_id, table_name, refer, is_vpn=0, test=0, days=None):
     connection = await aiosqlite.connect('vpn-user-test.db')
     cursor = await connection.cursor()
     join_date = datetime.now()
     join_date_str = join_date.strftime('%Y-%m-%d %H:%M:%S')
-    # one_month_go = join_date + timedelta(days=day)
-    # one_month_go_str = one_month_go.strftime('%Y-%m-%d %H:%M:%S')
+    if days:
+        one_month_go = join_date + timedelta(days=days)
+        one_month_go_str = one_month_go.strftime('%Y-%m-%d %H:%M:%S')
 
-    await cursor.execute(f'INSERT INTO {table_name} (user_id, join_date, is_vpn, refer, test) VALUES (?, ?, ?, ?, ?)',
-                         (user_id, join_date_str, is_vpn, refer, test))
+    else:
+        one_month_go_str = None
+
+    await cursor.execute(
+        f'INSERT INTO {table_name} (user_id, join_date, is_vpn, refer, test, end_date) VALUES (?, ?, ?, ?, ?, ?)',
+        (user_id, join_date_str, is_vpn, refer, test, one_month_go_str))
 
     await connection.commit()
     await connection.close()
@@ -182,7 +174,7 @@ async def how_users_in_db(table_name):
     return result[0]
 
 
-async def update_users_db(table_name, user_id, days, test=0):
+async def update_users_db(table_name, user_id, days, test=1):
     connection = await aiosqlite.connect('vpn-user-test.db')
     cursor = await connection.cursor()
 
@@ -209,12 +201,12 @@ async def update_users_db(table_name, user_id, days, test=0):
                 one_month_later_str = one_month_later.strftime('%Y-%m-%d %H:%M:%S')
 
                 await cursor.execute(f'UPDATE {table_name} SET end_date = ?, is_vpn = ?, test = ? WHERE user_id = ?',
-                                     (one_month_later_str, 1, user_id, test))
+                                     (one_month_later_str, 1, test, user_id))
 
         else:
 
             await cursor.execute(
-                f'INSERT OR REPLACE INTO {table_name} (end_date, is_vpn, test, WHERE user_id) VALUES (?, ?, ?, ?,)',
+                f'UPDATE {table_name} SET end_date=?, is_vpn=?, test=? WHERE user_id=?',
                 (one_month_go_str, 1, test, user_id)
             )
 
@@ -296,3 +288,38 @@ async def remove_trojan_user(user_id):
                                 'Продлевайте ваш VPN заранее, оставшиеся дни и трафик <b>НЕ СГОРЯТ</b>, '
                                 'они добавятся к новому тарифу')
     await pay_conf_trojan(user_id)
+
+
+async def write_password(password, user_id):
+    connection = await aiosqlite.connect('vpn-user-test.db')
+    cursor = await connection.cursor()
+    print(1)
+
+    await cursor.execute(
+        f'UPDATE trojan_users SET password=? WHERE user_id=?',
+        (password, user_id))
+    print(2)
+
+    await connection.commit()
+    await connection.close()
+
+
+async def count_refs(user_id: int):
+    try:
+        conn = await aiosqlite.connect('vpn-user-test.db')
+        cursor = await conn.cursor()
+
+        select_user_id = await cursor.execute('''
+            SELECT refer FROM users WHERE refer=?
+            UNION ALL
+            SELECT refer FROM trojan_users WHERE refer=?
+        ''',(user_id, user_id))
+        select_order = await select_user_id.fetchall()
+
+        users_dict = [i[0] for i in select_order]
+
+        await conn.close()
+        return len(users_dict) // 2
+
+    except Exception as e:
+        print(e)

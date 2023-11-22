@@ -2,7 +2,7 @@ import asyncio
 import subprocess
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from config import *
-from database import fetch_data, read_to_db_user_id, check_users_vpn_service
+from database import fetch_data, read_to_db_user_id, check_users_vpn_service, write_password, is_user_in_db
 import hashlib
 import random
 import string
@@ -74,8 +74,9 @@ async def delayed_task(chat_id):
         print(e)
 
 
-async def send_quota(msg: types.Message, quota, pay_id=None):
-    user = f"{msg.chat.id}rac"
+async def send_quota(user_id, quota, pay_id=None):
+    user = f"{user_id}rac"
+
     password_hash = generate_password(15)
     fullhash = hashlib.sha224(password_hash.encode('utf-8')).hexdigest()
 
@@ -85,14 +86,17 @@ async def send_quota(msg: types.Message, quota, pay_id=None):
                                                                                          quota))
     url = f"trojan://{password_hash}@24perep.ru:8888?security=tls&sni=24perep.ru&alpn=http%2F1." \
           f"1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#{user}"
+    # if not await is_user_in_db(table_name='trojan_users', user_id=user_id):
+    await write_password(password_hash, user_id)
+    # else:
 
     if pay_id:
-        await bot.send_message(chat_id=msg.chat.id, text=f'Платежный идентификатор\n'
-                                                         f'{pay_id}')
+        await bot.send_message(chat_id=user_id, text=f'Платежный идентификатор\n'
+                                                     f'{pay_id}')
     # await bot.send_message(chat_id=msg.chat.id, text='ваша ссылка, просто кликните на нее что бы скопировать')
     # await bot.send_message(chat_id=msg.chat.id, text=f'<code>{url}</code>', reply_markup=main_menu)
 
-    await bot.send_photo(chat_id=msg.chat.id,
+    await bot.send_photo(chat_id=user_id,
                          photo=f'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data={url}',
                          caption=f'ваша ссылка, просто нажмите на нее что бы скопировать:\n\n'
                                  '⚠️Это ваша личная ссылка, не давайте ее никому, если не хотите поделиться'
@@ -100,9 +104,9 @@ async def send_quota(msg: types.Message, quota, pay_id=None):
                                  'Для подключения <b>на другом устройстве можете использовать этот QR-код на '
                                  'следующем шаге</b>. Ваша ссылка и QR-код подходят для подключения неограниченного '
                                  'количества устройств. Каждое подключенное устройство будет расходовать ваш трафик.')
-    await bot.send_message(chat_id=msg.chat.id, text=f'<code>{url}</code>', reply_markup=main_menu)
+    await bot.send_message(chat_id=user_id, text=f'<code>{url}</code>', reply_markup=main_menu)
 
-    asyncio.create_task(delayed_task(chat_id=msg.chat.id))
+    asyncio.create_task(delayed_task(chat_id=user_id))
 
 
 async def send_message_mi(user, text, name=None):
@@ -144,10 +148,10 @@ async def send_to_all_users(text):
     for user_id in users:
         try:
             await bot.send_message(chat_id=user_id, text=text)
-            await asyncio.sleep(6)
+            await asyncio.sleep(2)
         except Exception as e:
             print(f'{e}-{user_id}')
-            await asyncio.sleep(6)
+            continue
 
 
 async def send_video_from_file(chat_id):
@@ -155,3 +159,16 @@ async def send_video_from_file(chat_id):
     with open('video/instr.mp4', 'rb') as video_file:
         await bot.send_video(chat_id=chat_id, video=video_file, caption='Вот инструкция по настройке VPN WireGuard',
                              reply_markup=main_menu)
+
+
+async def check_args(args, user_id: int):
+    if args.isnumeric():
+        if int(args) == user_id:
+            args = '0'
+            return args
+
+        elif await is_user_in_db('trojan_users', args) or await is_user_in_db('users', args):
+            return args
+    else:
+        args = '0'
+        return args
