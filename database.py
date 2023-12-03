@@ -143,7 +143,7 @@ async def check_users_vpn_service():
 
     # Удаление учетки каждого пользователя из trojan
     for user_id in users_to_delete_trojan:
-        await remove_trojan_user(user_id[0])                                         #сделать удаление из базы троян
+        await remove_trojan_user(user_id[0])
         await is_vpn_false(user_id[0], table_name='trojan_users')
 
     await connection.commit()
@@ -193,7 +193,7 @@ async def update_users_db(table_name, user_id, days, test=1):
             if date_in_db[0] <= now_date_str:
 
                 await cursor.execute(f'UPDATE {table_name} SET end_date = ?, is_vpn = ?, test = ? WHERE user_id = ?',
-                                     (one_month_go_str, 1, user_id, test))
+                                     (one_month_go_str, 1, test, user_id))
 
             elif date_in_db[0] >= now_date_str:
                 date_obj = datetime.strptime(date_in_db[0], '%Y-%m-%d %H:%M:%S')
@@ -293,12 +293,10 @@ async def remove_trojan_user(user_id):
 async def write_password(password, user_id):
     connection = await aiosqlite.connect('vpn-user-test.db')
     cursor = await connection.cursor()
-    print(1)
 
     await cursor.execute(
         f'UPDATE trojan_users SET password=? WHERE user_id=?',
         (password, user_id))
-    print(2)
 
     await connection.commit()
     await connection.close()

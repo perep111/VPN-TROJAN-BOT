@@ -19,8 +19,9 @@ my_vpn_button = KeyboardButton(text='🔐 Мой VPN')
 tarif_button = KeyboardButton(text='💸 Тарифы')
 support_button = KeyboardButton(text='🤯 Поддержка')
 instrukt_button = KeyboardButton(text='🎯 Как настроить VPN')
+ref_button = KeyboardButton(text="💰 Реферальная программа")
 main_menu.add(my_vpn_button, tarif_button, support_button)
-main_menu.add(instrukt_button)
+main_menu.add(instrukt_button, ref_button)
 
 
 pre_pay_keyboard_tro = InlineKeyboardMarkup(row_width=1)  # Можете указать другое значение row_width
@@ -35,9 +36,9 @@ pre_pay_keyboard_wir.add(connect_pay_button3,connect_pay_button2)
 
 connect_vpn = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text='💵 Подключить VPN ☕Micro: 50 GB', callback_data="joy_trojan")],
-        [InlineKeyboardButton(text='⏳ Подключить пробный тариф: 2 GB', callback_data='trial_tariff')],
-        [InlineKeyboardButton(text='💰 Подключить протокол WireGuard', callback_data='joy_wireguard')]
+        [InlineKeyboardButton(text='🩸 Подключить VPN Trojan: 50 GB', callback_data="joy_trojan")],
+        [InlineKeyboardButton(text='⏳ Пробный тариф Trojan: 2 GB', callback_data='trial_tariff')],
+        [InlineKeyboardButton(text='💧 Подключить протокол WireGuard', callback_data='joy_wireguard')]
     ]
 )
 
@@ -51,6 +52,13 @@ instrukt_kb = InlineKeyboardMarkup(
     inline_keyboard=[
         [InlineKeyboardButton(text='⚙ Установить и настроить VPN', callback_data="instrukt")],
         [InlineKeyboardButton(text='💸 Продлить тариф / сменить протокол', callback_data="extend_tariff")]
+    ]
+)
+
+device_kb = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text='Apple iPhone/iPad', callback_data="Apple")],
+        [InlineKeyboardButton(text='Android', callback_data="Android")]
     ]
 )
 

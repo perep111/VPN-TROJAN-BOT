@@ -25,6 +25,11 @@ async def remove_wireguard_user(user_id):
                                             'но вы можете продолжить пользоваться сервисом VPN после оплаты</b>\n\n'
                                             'Продлевайте ваш VPN заранее, оставшиеся дни <b>НЕ СГОРЯТ</b>, '
                                             'они добавятся к новому тарифу')
+                await bot.send_message(chat_id=user_id,
+                                       text='<b>Внимание, ожидаются блокировки протокола Wireguard, '
+                                            'рекомендую перейти но новый протокол Trojan</b>\n\n'
+                                            'Нажмите кнопку Тарифы и выберите Подключить VPN ☕Micro или'
+                                            'Подключить пробный тариф')
                 await pay_conf_wireguard(user_id)
                 await asyncio.sleep(1)
             except Exception as e:

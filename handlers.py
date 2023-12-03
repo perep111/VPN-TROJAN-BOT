@@ -6,7 +6,7 @@ from config import dp, bot
 from pay_conf import pay_conf_wireguard, pay_conf_trojan
 from func import main_menu, connect_vpn, instrukt_kb, extend_vpn
 from func import pre_pay_keyboard_tro, pre_pay_keyboard_wir, delayed_task, send_quota, send_message_mi, send_conf
-from func import add_wireguard_user, send_to_all_users, send_video_from_file, check_args
+from func import add_wireguard_user, send_to_all_users, send_video_from_file, check_args, device_kb
 from aiogram import types
 from aiogram.types import ContentType
 from database import is_test, count_refs
@@ -40,22 +40,6 @@ async def send_info(message: types.Message):
         await message.answer(system_info, parse_mode=ParseMode.MARKDOWN)
     else:
         await message.answer('соси')
-
-
-# @dp.message_handler(commands=['st'])
-# async def process_start_command(msg: types.Message):
-#     url = '<code>trojan://sq2nmm93McA7BSa@24perep.ru:' \
-#           '8888?security=tls&sni=24perep.ru&alpn=http%2F1.' \
-#           '1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#1348491834rac</code>'
-#     await bot.send_photo(chat_id=msg.chat.id,
-#                          photo=f'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data={url}',
-#                          caption=f'ваша ссылка, просто нажмите на нее что бы скопировать:\n\n'
-#                                  '⚠️Это ваша личная ссылка, не давайте ее никому, если не хотите поделиться'
-#                                  ' своим трафиком.\n\n'
-#                                  'Для подключения <b>на другом устройстве можете использовать этот QR-код на '
-#                                  'следующем шаге</b>. Ваша ссылка и QR-код подходят для подключения неограниченного '
-#                                  'количества устройств. Каждое подключенное устройство будет расходовать ваш трафик.')
-#     await bot.send_message(chat_id=msg.chat.id, text=url)
 
 
 @dp.message_handler(commands=['read'])
@@ -151,13 +135,15 @@ async def process_start_command(msg: types.Message):
                                     'т.к в вашем телеграм профиле нет user id')
 
 
-@dp.message_handler(commands=['ref'])
-async def refferal(mess: types.Message):
+@dp.message_handler(text='💰 Реферальная программа')
+async def referal(mess: types.Message):
     ref_link = await get_start_link(payload=mess.from_user.id)
     count = await count_refs(mess.from_user.id)
     await mess.answer(f'У тебя  рефералов: {count}\n'
                       f'Твоя реферальная ссылка\n'
-                      f'<code>{ref_link}</code>')
+                      f'Просто нажми на нее что бы скопировать\n\n'
+                      f'<code>{ref_link}</code>\n\n',
+                      reply_markup=main_menu)
 
 
 @dp.message_handler(text='💸 Тарифы')
@@ -180,7 +166,45 @@ async def mess_replay(msg: types.Message):
                            text='если возникли проблемы с подключением или с подпиской,\n'
                                 'напишите разработчикам @f_o_x_y_s,\n'
                                 'так же последние новости публикуются на '
-                                '<a href="https://24perep.ru/news/">этом сайте</a>')
+                                '<a href="https://24perep.ru/">этом сайте</a>')
+
+
+@dp.message_handler(text='🎯 Как настроить VPN')
+async def mess_replay(msg: types.Message):
+    await bot.send_message(chat_id=msg.chat.id,
+                           text='Это инструкция для подключения протокола Trojan\n\n'
+                                'Выберите, на какое устройство вы хотели бы установить VPN:',
+                           reply_markup=device_kb)
+
+
+@dp.callback_query_handler(text="Android")
+async def send_instruct_an(call: types.CallbackQuery):
+    await call.answer()
+    await bot.send_message(chat_id=call.from_user.id,
+                           text='Инструкция для v2rayNG (Android)\n\n'
+                                '1️⃣ Cкопировать ключ ⬆\n'
+                                ' ссылка выше, начинается на "trojan://"\n'
+                                '2️⃣ Cкачать приложение '
+                                '<a href="https://play.google.com/store/apps/details?id=com.v2ray.ang">'
+                                ' v2rayNG </a>\n'
+                                '3️⃣ Cмотреть видео как добавить ключ',
+                           reply_markup=main_menu,
+                           disable_web_page_preview=True)
+
+
+@dp.callback_query_handler(text="Apple")
+async def send_instruct_ap(call: types.CallbackQuery):
+    await call.answer()
+    await bot.send_message(chat_id=call.from_user.id,
+                           text='Инструкция для Streisand (Apple)\n\n'
+                                '1️⃣ Cкопировать ключ ⬆ \n'
+                                'ссылка выше, начинается на "trojan://"\n'
+                                '2️⃣ Cкачать приложение '
+                                '<a href="https://apps.apple.com/ru/app/streisand/id6450534064">'
+                                ' Streisand </a>\n'
+                                '3️⃣ Cмотреть видео как добавить ключ и настроить маршрутизацию',
+                           reply_markup=main_menu,
+                           disable_web_page_preview=True)
 
 
 @dp.message_handler(text='🔐 Мой VPN')
@@ -204,7 +228,7 @@ async def get_data(msg: types.Message):
             date_to_tro = ['Ты какой то читер конкретныцй',]
 
         await bot.send_message(chat_id=msg.chat.id,
-                               text=f'🌟 Ваш тариф ☕️ Micro: 50 GB\n'
+                               text=f'🌟 Ваш тариф Trojan: 50 GB\n'
                                     f'🚀 остаток трафика = {a}GB\n'
                                     f'🟢 активен до: {date_to_tro[0]}\n\n'
                                     f'📲 так же у вас подключен WireGuard \n'
@@ -225,7 +249,7 @@ async def get_data(msg: types.Message):
             date_do = ['Ты какой то читерhhh',]
 
         await bot.send_message(chat_id=msg.chat.id,
-                               text=f'🌟 Ваш тариф ☕ Micro: 50 GB\n'
+                               text=f'🌟 Ваш тариф Trojan: 50 GB\n'
                                     f'🚀 остаток трафика = {a}GB\n'
                                     f'🟢 активен до: {date_do[0]}\n\n'
                                     f'ℹ Вы можете установить и настроить VPN на неограниченное количество устройств,'
@@ -275,7 +299,7 @@ async def trial_tariff(call: types.CallbackQuery):
             await update_users_db(table_name='trojan_users', user_id=call.from_user.id, days=7, test=1)
 
         else:
-            await write_to_db(user_id=call.from_user.id, table_name='trojan_users', refer=0, days=7, test=1)
+            await write_to_db(user_id=call.from_user.id, is_vpn=1, table_name='trojan_users', refer=0, days=7, test=1)
 
         await send_quota(user_id=call.from_user.id, quota='2147483648')
 
@@ -314,6 +338,9 @@ async def extend_tariff(call: types.CallbackQuery):
 
     else:
         await bot.send_message(chat_id=call.message.chat.id,
+                               text='<b>Внимание, ожидаются блокировки протокола Wireguard,'
+                                    'рекомендую перейти но новый протокол Trojan</b>')
+        await bot.send_message(chat_id=call.message.chat.id,
                                text='🦞 Переходите на новый протокол trojan, '
                                     'пробуйте тестовый период бесплатно\n\n'
                                     'или продлите свой WireGuard',
@@ -325,6 +352,10 @@ async def add_wireguard(call: types.CallbackQuery):
     await call.answer()
     a = await is_test(tale_name='users', user_id=call.from_user.id)
     if a:
+        await bot.send_message(chat_id=call.message.chat.id,
+                               text='<b>Внимание, ожидаются блокировки протокола Wireguard,'
+                                    'рекомендую перейти но новый протокол Trojan</b>')
+
         await bot.send_message(chat_id=call.message.chat.id,
                                text='💈 Вы выбрали протокол Wireguard\n'
                                     'При оплате на МЕСЯЦ: 100р\n\n'
@@ -338,7 +369,10 @@ async def add_wireguard(call: types.CallbackQuery):
         await send_conf(user_id=call.from_user.id)
         await update_users_db(table_name='users', user_id=call.from_user.id, days=10, test=1)
         await bot.send_message(chat_id=call.message.chat.id,
-                               text="Вам активирован пробный период: 10 дней",
+                               text='<b>Внимание, ожидаются блокировки протокола Wireguard, '
+                                    'рекомендую перейти но новый протокол Trojan</b>')
+        await bot.send_message(chat_id=call.message.chat.id,
+                               text="Вам активирован пробный период протокола Wireguard: 10 дней",
                                reply_markup=main_menu)
         await send_video_from_file(chat_id=call.message.chat.id)
 
