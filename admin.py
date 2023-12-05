@@ -1,7 +1,7 @@
 import psutil
 import math
 import time
-from database import how_users_in_db
+from database import how_users_in_db, how_users_in_db_unic
 # import speedtest
 
 
@@ -58,6 +58,7 @@ async def get_system_info():
     users_in_wg = await how_users_in_db('users')
     users_in_tj = await how_users_in_db('trojan_users')
     total_users = users_in_tj + users_in_wg
+    total_unic_users = await how_users_in_db_unic()
 
     return """\
 🎛 *CPU ядра*: `{cpu_cores}`
@@ -74,6 +75,7 @@ async def get_system_info():
 👥 *Пользователей trojan*: `{users_trojan}`
 👥 *Пользователей wireguard*: `{users_wireguard}`
 👥 *Всего пользователей*: `{total_users}`
+👥 *Всего уникальных юзеров*: `{total_unic_user}`
 ➖➖➖➖➖➖➖
 ⏫ *Скорость отдачи*: `{up_speed}`
 ⏬ *Скорость загрузки*: `{down_speed}`
@@ -90,5 +92,6 @@ async def get_system_info():
         users_wireguard=users_in_wg,
         total_users=total_users,
         up_speed=readable_size(up_speed),
-        down_speed=readable_size(down_speed)
+        down_speed=readable_size(down_speed),
+        total_unic_user=total_unic_users
     )

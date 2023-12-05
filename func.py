@@ -3,6 +3,7 @@ import subprocess
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from config import *
 from database import fetch_data, read_to_db_user_id, check_users_vpn_service, write_password, is_user_in_db
+from database import check_notifications
 import hashlib
 import random
 import string
@@ -10,7 +11,7 @@ import string
 
 async def check_users_periodically():
     while True:
-        await asyncio.sleep(10)
+        await asyncio.sleep(60)
         await check_users_vpn_service()
 
 
@@ -76,7 +77,7 @@ async def delayed_task(chat_id):
                                text='если у вас возникли проблемы с подключением,\n'
                                     'напишите в поддержку @f_o_x_y_s\n\n'
                                     'Так же все актуальные новости можно \n'
-                                    'посмотреть <a href="https://24perep.ru/news/">на нашем сайте</a>'
+                                    'посмотреть <a href="https://24perep.ru/">на нашем сайте</a>'
                                )
     except Exception as e:
         print(e)
@@ -180,3 +181,30 @@ async def check_args(args, user_id: int):
     else:
         args = '0'
         return args
+
+
+async def send_notifications():
+    while True:
+        users_trojan = await check_notifications('trojan_users')
+        users_wireguard = await check_notifications('users')
+        try:
+
+            for user in users_trojan:
+                await bot.send_message(chat_id=user,
+                                       text='❗️ЗАВТРА закончится ваш тариф протокола Trojan\n\n'
+                                            '🌟 Продлевайте тариф заранее, оставшиеся дни и трафик ДОБАВЯТСЯ,'
+                                            ' не сгорят!',
+                                       reply_markup=connect_vpn)
+
+            for user in users_wireguard:
+                await bot.send_message(chat_id=user,
+                                       text='❗️ЗАВТРА закончится ваш тариф протокола WireGuard\n\n'
+                                            '🌟 Продлевайте тариф заранее, оставшиеся дни ДОБАВЯТСЯ, не сгорят!\n\n'
+                                            '🚀 Но лучше переходите но новый протокол Trojan, его невозможно '
+                                            'заблокировать',
+                                       reply_markup=connect_vpn)
+        except Exception as e:
+            print(e)
+
+        await asyncio.sleep(60)
+

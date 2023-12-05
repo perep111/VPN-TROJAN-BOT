@@ -174,6 +174,27 @@ async def how_users_in_db(table_name):
     return result[0]
 
 
+async def how_users_in_db_unic():
+    try:
+        conn = await aiosqlite.connect('vpn-user-test.db')
+        cursor = await conn.cursor()
+
+        select_user_id = await cursor.execute('''
+            SELECT user_id FROM users
+            UNION
+            SELECT user_id FROM trojan_users
+        ''')
+        select_order = await select_user_id.fetchall()
+
+        users_dict = [i[0] for i in select_order]
+
+        await conn.close()
+        return len(users_dict)
+
+    except Exception as e:
+        print(e)
+
+
 async def update_users_db(table_name, user_id, days, test=1):
     connection = await aiosqlite.connect('vpn-user-test.db')
     cursor = await connection.cursor()
@@ -318,6 +339,34 @@ async def count_refs(user_id: int):
 
         await conn.close()
         return len(users_dict) // 2
+
+    except Exception as e:
+        print(e)
+
+
+async def check_notifications(tale_name):
+    try:
+
+        end_date_start = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M')
+        end_date_end = (datetime.now() + timedelta(days=1, minutes=1)).strftime('%Y-%m-%d %H:%M')
+
+        conn = await aiosqlite.connect('vpn-user-test.db')
+        cursor = await conn.cursor()
+
+        # Find users whose end_date is within the next 24 hours
+        query = f'''
+            SELECT user_id
+            FROM {tale_name}
+            WHERE end_date > ? AND end_date <= ?
+        '''
+
+        await cursor.execute(query, (end_date_start, end_date_end))
+        users_to_notify = await cursor.fetchall()
+
+        users_dict = [i[0] for i in users_to_notify]
+
+        await conn.close()
+        return users_dict
 
     except Exception as e:
         print(e)
