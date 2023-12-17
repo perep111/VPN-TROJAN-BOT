@@ -1,4 +1,4 @@
-from config import bot, TOKEN_UKASSA_TEST
+from config import bot, TOKEN_UKASSA
 from aiogram.types import LabeledPrice
 
 
@@ -27,7 +27,7 @@ async def pay_conf_wireguard(chat_id):
                            description='Безграничные возможности, которые откроются со всеми '
                                        'запрещенными в РФ соцсетями',
                            payload='payment_wireguard',
-                           provider_token=TOKEN_UKASSA_TEST,
+                           provider_token=TOKEN_UKASSA,
                            currency='RUB',
                            start_parameter='vpn_bot',
                            need_email=True,
@@ -51,7 +51,7 @@ async def pay_conf_trojan(chat_id):
                            description='Безграничные возможности, которые откроются со всеми '
                                        'запрещенными в РФ соцсетями',
                            payload='payment_trojan',
-                           provider_token=TOKEN_UKASSA_TEST,
+                           provider_token=TOKEN_UKASSA,
                            currency='RUB',
                            start_parameter='vpn_bot',
                            need_email=True,

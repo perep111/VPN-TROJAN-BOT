@@ -56,7 +56,7 @@ async def fetch_data(query, args=None):
 
 async def create_db():
     print('создаю базу')
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     await cursor.execute('''
@@ -86,7 +86,7 @@ async def create_db():
 
 
 async def write_to_db(user_id, table_name, refer, is_vpn=0, test=0, days=None):
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
     join_date = datetime.now()
     join_date_str = join_date.strftime('%Y-%m-%d %H:%M:%S')
@@ -106,7 +106,7 @@ async def write_to_db(user_id, table_name, refer, is_vpn=0, test=0, days=None):
 
 
 async def is_vpn_false(user_id, table_name):
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     await cursor.execute(f'UPDATE {table_name} SET is_vpn = ? WHERE user_id = ?', (0, user_id))
@@ -116,7 +116,7 @@ async def is_vpn_false(user_id, table_name):
 
 
 async def check_users_vpn_service():
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     # Получение текущей даты и вычисление даты месяц назад
@@ -151,7 +151,7 @@ async def check_users_vpn_service():
 
 
 async def is_user_in_db(table_name, user_id: int) -> bool:
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     await cursor.execute(f'SELECT COUNT(*) FROM {table_name} WHERE user_id = ?', (user_id,))
@@ -163,7 +163,7 @@ async def is_user_in_db(table_name, user_id: int) -> bool:
 
 
 async def how_users_in_db(table_name):
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     await cursor.execute(f'SELECT COUNT(*) FROM {table_name} WHERE is_vpn = ?', (1,))
@@ -176,13 +176,13 @@ async def how_users_in_db(table_name):
 
 async def how_users_in_db_unic():
     try:
-        conn = await aiosqlite.connect('vpn-user-test.db')
+        conn = await aiosqlite.connect('vpn-user.db')
         cursor = await conn.cursor()
 
         select_user_id = await cursor.execute('''
-            SELECT user_id FROM users
+            SELECT user_id FROM users WHERE is_vpn = 1
             UNION
-            SELECT user_id FROM trojan_users
+            SELECT user_id FROM trojan_users WHERE is_vpn = 1
         ''')
         select_order = await select_user_id.fetchall()
 
@@ -196,7 +196,7 @@ async def how_users_in_db_unic():
 
 
 async def update_users_db(table_name, user_id, days, test=1):
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     now_date = datetime.now()
@@ -240,7 +240,7 @@ async def update_users_db(table_name, user_id, days, test=1):
 
 async def read_to_db_user_id():
     try:
-        conn = await aiosqlite.connect('vpn-user-test.db')
+        conn = await aiosqlite.connect('vpn-user.db')
         cursor = await conn.cursor()
 
         select_user_id = await cursor.execute('''
@@ -261,7 +261,7 @@ async def read_to_db_user_id():
 
 async def read_to_db_end_date(user_id, table_name):
     try:
-        conn = await aiosqlite.connect('vpn-user-test.db')
+        conn = await aiosqlite.connect('vpn-user.db')
         cursor = await conn.cursor()
 
         await cursor.execute(f'SELECT end_date FROM {table_name} WHERE user_id = ?', (user_id,))
@@ -275,7 +275,7 @@ async def read_to_db_end_date(user_id, table_name):
 
 
 async def is_user_in_wireguard(user_id: int) -> bool:
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     await cursor.execute('SELECT COUNT(*) FROM users WHERE user_id = ? AND is_vpn = ?',
@@ -288,7 +288,7 @@ async def is_user_in_wireguard(user_id: int) -> bool:
 
 
 async def is_test(tale_name, user_id: int) -> bool:
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     await cursor.execute(f'SELECT COUNT(*) FROM {tale_name} WHERE user_id = ? AND test = ?',
@@ -306,13 +306,16 @@ async def remove_trojan_user(user_id):
     await bot.send_message(chat_id=user_id,
                            text='<b>😢 Время вашего VPN протокол trojan закончилось,\n'
                                 'но вы можете продолжить пользоваться сервисом VPN после оплаты</b>\n\n'
-                                'Продлевайте ваш VPN заранее, оставшиеся дни и трафик <b>НЕ СГОРЯТ</b>, '
-                                'они добавятся к новому тарифу')
+                                'Продлевайте ваш VPN заранее, оставшиеся дни <b>НЕ СГОРЯТ</b>, '
+                                'они добавятся к новому тарифу\n\n'
+                                '<b>Не хочешь платить?\n'
+                                'Приведи друга и получи 2 недели VPN бесплатно</b> '
+                                'Нажми кнопку Реферальная программа и отправь полученную ссылку другу')
     await pay_conf_trojan(user_id)
 
 
 async def write_password(password, user_id):
-    connection = await aiosqlite.connect('vpn-user-test.db')
+    connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()
 
     await cursor.execute(
@@ -325,7 +328,7 @@ async def write_password(password, user_id):
 
 async def count_refs(user_id: int):
     try:
-        conn = await aiosqlite.connect('vpn-user-test.db')
+        conn = await aiosqlite.connect('vpn-user.db')
         cursor = await conn.cursor()
 
         select_user_id = await cursor.execute('''
@@ -350,7 +353,7 @@ async def check_notifications(tale_name):
         end_date_start = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M')
         end_date_end = (datetime.now() + timedelta(days=1, minutes=1)).strftime('%Y-%m-%d %H:%M')
 
-        conn = await aiosqlite.connect('vpn-user-test.db')
+        conn = await aiosqlite.connect('vpn-user.db')
         cursor = await conn.cursor()
 
         # Find users whose end_date is within the next 24 hours

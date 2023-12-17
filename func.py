@@ -37,15 +37,15 @@ pre_pay_keyboard_wir.add(connect_pay_button3,connect_pay_button2)
 
 connect_vpn = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text='🩸 Подключить VPN Trojan: 50 GB', callback_data="joy_trojan")],
-        [InlineKeyboardButton(text='⏳ Пробный тариф Trojan: 2 GB', callback_data='trial_tariff')],
+        [InlineKeyboardButton(text='🩸 Подключить VPN Trojan:', callback_data="joy_trojan")],
+        [InlineKeyboardButton(text='⏳ Пробный тариф Trojan:', callback_data='trial_tariff')],
         [InlineKeyboardButton(text='💧 Подключить протокол WireGuard', callback_data='joy_wireguard')]
     ]
 )
 
 extend_vpn = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text='💵 Добавить еще месяц и 50GB: 100р', callback_data="pre_pay_tro")]
+        [InlineKeyboardButton(text='💵 Добавить еще месяц 100р', callback_data="pre_pay_tro")]
     ]
 )
 
@@ -83,7 +83,7 @@ async def delayed_task(chat_id):
         print(e)
 
 
-async def send_quota(user_id, quota, pay_id=None):
+async def send_quota(user_id, quota):
     user = f"{user_id}rac"
 
     password_hash = generate_password(15)
@@ -95,24 +95,10 @@ async def send_quota(user_id, quota, pay_id=None):
                                                                                          quota))
     url = f"trojan://{password_hash}@24perep.ru:8888?security=tls&sni=24perep.ru&alpn=http%2F1." \
           f"1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#{user}"
-    # if not await is_user_in_db(table_name='trojan_users', user_id=user_id):
     await write_password(password_hash, user_id)
-    # else:
 
-    if pay_id:
-        await bot.send_message(chat_id=user_id, text=f'Платежный идентификатор\n'
-                                                     f'{pay_id}')
-    # await bot.send_message(chat_id=msg.chat.id, text='ваша ссылка, просто кликните на нее что бы скопировать')
-    # await bot.send_message(chat_id=msg.chat.id, text=f'<code>{url}</code>', reply_markup=main_menu)
-
-    await bot.send_photo(chat_id=user_id,
-                         photo=f'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data={url}',
-                         caption=f'ваша ссылка, просто нажмите на нее что бы скопировать:\n\n'
-                                 '⚠️Это ваша личная ссылка, не давайте ее никому, если не хотите поделиться'
-                                 ' своим трафиком.\n\n'
-                                 'Для подключения <b>на другом устройстве можете использовать этот QR-код на '
-                                 'следующем шаге</b>. Ваша ссылка и QR-код подходят для подключения неограниченного '
-                                 'количества устройств. Каждое подключенное устройство будет расходовать ваш трафик.')
+    await bot.send_message(chat_id=user_id,
+                           text=f'ваша ссылка, просто нажмите на нее что бы скопировать:\n\n')
     await bot.send_message(chat_id=user_id, text=f'<code>{url}</code>', reply_markup=main_menu)
 
     asyncio.create_task(delayed_task(chat_id=user_id))
@@ -139,6 +125,7 @@ async def add_wireguard_user(user_id):
 
         if process.returncode == 0:
             await bot.send_message(chat_id='1348491834',text="успешно добавлен")
+            await send_conf(user_id)
         else:
             await bot.send_message(chat_id='1348491834',text=f"Ошибка создания конф пользователя {user_id}")
 
@@ -156,17 +143,22 @@ async def send_to_all_users(text):
     users = await read_to_db_user_id()
     for user_id in users:
         try:
-            await bot.send_message(chat_id=user_id, text=text)
+            await bot.send_message(chat_id=user_id,
+                                   text=f'{text}\n\n'
+                                        f'Всю актуальную информацию, а так же новости в нашем интенсивно меняющимся '
+                                        f'мире VPN индустрии, можно посмотреть на нашем сайте\n'
+                                        f'<a href="https://24perep.ru/">жми сюда</a>',
+                                   reply_markup=main_menu)
             await asyncio.sleep(2)
         except Exception as e:
             print(f'{e}-{user_id}')
             continue
 
 
-async def send_video_from_file(chat_id):
+async def send_video_from_file(chat_id, video, caption):
     # Открываем файл видео
-    with open('video/instr.mp4', 'rb') as video_file:
-        await bot.send_video(chat_id=chat_id, video=video_file, caption='Вот инструкция по настройке VPN WireGuard',
+    with open(video, 'rb') as video_file:
+        await bot.send_video(chat_id=chat_id, video=video_file, caption=caption,
                              reply_markup=main_menu)
 
 
@@ -192,8 +184,11 @@ async def send_notifications():
             for user in users_trojan:
                 await bot.send_message(chat_id=user,
                                        text='❗️ЗАВТРА закончится ваш тариф протокола Trojan\n\n'
-                                            '🌟 Продлевайте тариф заранее, оставшиеся дни и трафик ДОБАВЯТСЯ,'
-                                            ' не сгорят!',
+                                            '🌟 Продлевайте тариф заранее, оставшиеся дни ДОБАВЯТСЯ,'
+                                            ' не сгорят!\n\n'
+                                            '<b>Не хочешь платить?\n'
+                                            'Приведи друга и получи 2 недели VPN бесплатно</b> '
+                                            'Нажми кнопку Реферальная программа и отправь полученную ссылку другу',
                                        reply_markup=connect_vpn)
 
             for user in users_wireguard:
@@ -201,7 +196,10 @@ async def send_notifications():
                                        text='❗️ЗАВТРА закончится ваш тариф протокола WireGuard\n\n'
                                             '🌟 Продлевайте тариф заранее, оставшиеся дни ДОБАВЯТСЯ, не сгорят!\n\n'
                                             '🚀 Но лучше переходите но новый протокол Trojan, его невозможно '
-                                            'заблокировать',
+                                            'заблокировать\n\n'
+                                            '<b>Не хочешь платить?\n'
+                                            'Приведи друга и получи 2 недели VPN бесплатно</b> '
+                                            'Нажми кнопку Реферальная программа и отправь полученную ссылку другу',
                                        reply_markup=connect_vpn)
         except Exception as e:
             print(e)
