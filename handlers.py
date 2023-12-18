@@ -308,6 +308,7 @@ async def trial_tariff(call: types.CallbackQuery):
                                     ' нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
                                     'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
                                reply_markup=main_menu)
+        await send_message_mi(user=call.from_user.id, text='подключил Пробный Trojan', name=call.from_user.username)
 
     else:
 
@@ -359,7 +360,7 @@ async def add_wireguard(call: types.CallbackQuery):
         await bot.send_message(chat_id=call.message.chat.id,
                                text='💈 Вы выбрали протокол Wireguard\n'
                                     'При оплате на МЕСЯЦ: 100р\n\n'
-                                    '⚠️В любой момент вы можете перейти на любой другой тариф\n\n'
+                                    '⚠️В любой момент вы можете перейти на другой тариф\n\n'
                                     'Сделайте выбор:',
                                reply_markup=pre_pay_keyboard_wir)
     else:
@@ -370,8 +371,22 @@ async def add_wireguard(call: types.CallbackQuery):
                                text="Вам активирован пробный период протокола Wireguard: 7 дней",
                                reply_markup=main_menu)
         await send_video_from_file(chat_id=call.message.chat.id,
-                                   video='video/instr.mp4',
+                                   video='video/instr-wire.MP4',
                                    caption='Вот инструкция по настройке VPN WireGuard')
+        await bot.send_message(chat_id=call.message.chat.id,
+                               text=f'<b>Для подключения к VPN:\n\n'
+                                    f'1️⃣⬇️ Установи <a href="https://apps.apple.com/us/app/wireguard/id1441195209?ls=1">'
+                                    f'WireGuard VPN для iPhone</a>\n(это бесплатно)\n\n'
+                                    f'либо\n'
+                                    f'1️⃣⬇️ Установи <a href="https://play.google.com/store/apps/details?id=com.wireguard.android&pli=1">'
+                                    f'WireGuard VPN для Android</a>\n(это бесплатно)\n\n'
+                                    f'Если у вас HUAWEI или Honor, то жми '
+                                    f'<a href="https://apkpure.com/ru/wireguard/com.wireguard.android">сюда</a>\n'
+                                    f'(тоже бесплатно)\n\n'
+                                    f'2️⃣⬇️ Скачай конфиг и установи его в приложение WireGuard</b>\n\n'
+                                    f'если что-то не получается, напишите мне @f_o_x_y_s я помогу установить VPN',
+                               reply_markup=main_menu,
+                               disable_web_page_preview=True)
 
 
 @dp.callback_query_handler(text="instrukt")
@@ -465,6 +480,7 @@ async def process_pay(message: types.Message):
                                         'что бы узнать срок действия тарифа\n\n'
                                         'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
                                    reply_markup=main_menu)
+            await send_message_mi(user=user_id, text='Купил Trojan', name=name)
 
         elif data and trojan_is:
 
@@ -479,8 +495,8 @@ async def process_pay(message: types.Message):
                                    text=f'Платежный идентификатор\n'f'{pay_id}',
                                    reply_markup=main_menu)
 
-            await send_message_mi(user=user, text='добавил 30 дней', name=name)
             await update_users_db(table_name='trojan_users', user_id=user_id, days=30)
+            await send_message_mi(user=user_id, text='Добавил 30 дней Trojan', name=name)
 
         elif trojan_is and not data:
             await send_quota(message.from_user.id, quota=quota)
@@ -493,6 +509,7 @@ async def process_pay(message: types.Message):
                                         ' нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
                                         'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
                                    reply_markup=main_menu)
+            await send_message_mi(user=user_id, text='Добавил 30 дней Trojan', name=name)
 
     elif message.successful_payment.invoice_payload == 'payment_wireguard':
 
@@ -503,7 +520,7 @@ async def process_pay(message: types.Message):
             await bot.send_message(chat_id=message.chat.id,
                                    text=f'Платежный идентификатор\n'
                                         f'{pay_id}')
-            await send_message_mi(user=user_id, text='подключил WireGuard', name=name)
+            await send_message_mi(user=user_id, text='оплатил WireGuard', name=name)
 
             asyncio.create_task(delayed_task(user_id))
 

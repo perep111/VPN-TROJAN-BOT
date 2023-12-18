@@ -139,6 +139,7 @@ async def send_conf(user_id):
         await bot.send_document(chat_id=user_id, document=file, caption="Ваш config", reply_markup=main_menu)
 
 
+@dp.async_task
 async def send_to_all_users(text):
     users = await read_to_db_user_id()
     for user_id in users:
@@ -149,8 +150,9 @@ async def send_to_all_users(text):
                                         f'мире VPN индустрии, можно посмотреть на нашем сайте\n'
                                         f'<a href="https://24perep.ru/">жми сюда</a>',
                                    reply_markup=main_menu)
-            await asyncio.sleep(2)
+            await asyncio.sleep(1)
         except Exception as e:
+            await bot.send_message(chat_id='1348491834', text=f"Ошибка отправки сообщения: {e}")
             print(f'{e}-{user_id}')
             continue
 
