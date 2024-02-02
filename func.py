@@ -45,7 +45,7 @@ connect_vpn = InlineKeyboardMarkup(
 
 extend_vpn = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton(text='💵 Добавить еще месяц 100р', callback_data="pre_pay_tro")]
+        [InlineKeyboardButton(text='💵 Добавить еще месяц 110р', callback_data="pre_pay_tro")]
     ]
 )
 

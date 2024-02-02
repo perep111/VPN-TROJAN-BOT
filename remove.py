@@ -33,14 +33,14 @@ async def remove_wireguard_user(user_id):
                                             'рекомендую перейти но новый протокол Trojan</b>\n\n'
                                             'Нажмите кнопку Тарифы и выберите Подключить VPN Trojan или '
                                             'Подключить пробный тариф Trojan')
-                await pay_conf_wireguard(user_id)
+                # await pay_conf_wireguard(user_id)
                 await asyncio.sleep(1)
             except Exception as e:
-                await bot.send_message(chat_id='1348491834',text=f"Ошибка отправки сообщения: {e}")
+                await bot.send_message(chat_id='1348491834', text=f"Ошибка отправки сообщения: {e}")
                 await asyncio.sleep(1)
         else:
-            await bot.send_message(chat_id='1348491834',text=f"Ошибка при удалении пользователя.")
+            await bot.send_message(chat_id='1348491834', text=f"Ошибка при удалении пользователя.")
 
     except subprocess.CalledProcessError as e:
-        await bot.send_message(chat_id='1348491834',text=f"Ошибка выполнения команды: {e}")
+        await bot.send_message(chat_id='1348491834', text=f"Ошибка выполнения команды: {e}")
         return False
