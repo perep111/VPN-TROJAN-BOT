@@ -296,7 +296,7 @@ async def trial_tariff(call: types.CallbackQuery):
 
     if not data_test and not data_trojan:
         if await is_user_in_db(table_name='trojan_users', user_id=call.from_user.id):
-            await update_users_db(table_name='trojan_users', user_id=call.from_user.id, days=7, test=1)
+            await update_users_db(table_name='trojan_users', user_id=call.from_user.id, days=3, test=1)
 
         else:
             await write_to_db(user_id=call.from_user.id, is_vpn=1, table_name='trojan_users', refer=0, days=3, test=1)
@@ -334,7 +334,7 @@ async def extend_tariff(call: types.CallbackQuery):
 
     elif data:
         await bot.send_message(chat_id=call.message.chat.id,
-                               text='☕ Добавить еще месяц: 100р\n',
+                               text='☕ Добавить еще месяц: 110р\n',
                                reply_markup=extend_vpn)
 
     else:
@@ -351,6 +351,12 @@ async def extend_tariff(call: types.CallbackQuery):
 @dp.callback_query_handler(text="joy_wireguard")
 async def add_wireguard(call: types.CallbackQuery):
     await call.answer()
+    # await bot.send_message(chat_id=call.message.chat.id,
+    #                        text='<b>Внимание, протокол Wireguard больше на поставляется'
+    #                              'рекомендую перейти но новый протокол Trojan</b>',
+    #                        reply_markup=main_menu)
+    #
+
     a = await is_test(tale_name='users', user_id=call.from_user.id)
     if a:
         await bot.send_message(chat_id=call.message.chat.id,
@@ -359,7 +365,7 @@ async def add_wireguard(call: types.CallbackQuery):
 
         await bot.send_message(chat_id=call.message.chat.id,
                                text='💈 Вы выбрали протокол Wireguard\n'
-                                    'При оплате на МЕСЯЦ: 100р\n\n'
+                                    'При оплате на МЕСЯЦ: 110р\n\n'
                                     '⚠️В любой момент вы можете перейти на другой тариф\n\n'
                                     'Сделайте выбор:',
                                reply_markup=pre_pay_keyboard_wir)

@@ -303,7 +303,8 @@ async def is_test(tale_name, user_id: int) -> bool:
 
 async def remove_trojan_user(user_id):
     user = f"{user_id}rac"
-    await fetch_data("DELETE FROM users WHERE username = '{}'".format(user,))
+    # await fetch_data("DELETE FROM users WHERE username = '{}'".format(user,))
+    await fetch_data("UPDATE users SET quota = 1, download = 0, upload = 0 WHERE username = '{}'".format(user,))
     try:
         await bot.send_message(chat_id=user_id,
                                text='<b>😢 Время вашего VPN протокол trojan закончилось,\n'

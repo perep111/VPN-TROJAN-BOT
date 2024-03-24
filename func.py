@@ -93,7 +93,7 @@ async def send_quota(user_id, quota):
         "INSERT INTO users (username, password, quota) VALUES ('{}', '{}', '{}')".format(user,
                                                                                          fullhash,
                                                                                          quota))
-    url = f"trojan://{password_hash}@24perep.ru:8888?security=tls&sni=24perep.ru&alpn=http%2F1." \
+    url = f"trojan://{password_hash}@24perep.ru:8888?security=tls&sni=vk.ru&alpn=http%2F1." \
           f"1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#{user}"
     await write_password(password_hash, user_id)
 
@@ -135,7 +135,7 @@ async def add_wireguard_user(user_id):
 
 
 async def send_conf(user_id):
-    with open(f'/home/vpn/configs/vpn{str(user_id)}.conf', 'rb') as file:
+    with open(f'/etc/wireguard/configs/vpn{str(user_id)}.conf', 'rb') as file:
         await bot.send_document(chat_id=user_id, document=file, caption="Ваш config", reply_markup=main_menu)
 
 
