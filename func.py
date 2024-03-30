@@ -93,7 +93,7 @@ async def send_quota(user_id, quota):
         "INSERT INTO users (username, password, quota) VALUES ('{}', '{}', '{}')".format(user,
                                                                                          fullhash,
                                                                                          quota))
-    url = f"trojan://{password_hash}@24perep.ru:8888?security=tls&sni=vk.ru&alpn=http%2F1." \
+    url = f"trojan://{password_hash}@24perep.ru:8888?security=tls&sni=24perep.ru&alpn=http%2F1." \
           f"1%2Ch2%2Ch3&fp=firefox&type=tcp&headerType=none#{user}"
     await write_password(password_hash, user_id)
 
