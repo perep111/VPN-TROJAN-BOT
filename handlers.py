@@ -51,6 +51,16 @@ async def all_users(message: types.Message):
         await message.reply("У вас нет прав для выполнения этой команды.")
 
 
+@dp.message_handler(content_types=types.ContentType.VIDEO)
+async def handle_video(message: types.Message):
+    if message.from_user.id in admin:
+        # Обработка видео
+        video = message.video  # Получаем видео из сообщения
+        video_id = message.video.file_id  # Получаем идентификатор видео из сообщения
+        caption = message.caption  # Получаем подпись к видео
+        await send_to_all_users(caption, video_id)
+
+
 @dp.message_handler(commands=['start'])
 async def process_start_command(msg: types.Message):
     user_id = msg.from_user.id

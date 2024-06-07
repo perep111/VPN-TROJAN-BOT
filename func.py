@@ -140,7 +140,7 @@ async def send_conf(user_id):
 
 
 @dp.async_task
-async def send_to_all_users(text):
+async def send_to_all_users(text, video_id=None):
     users = await read_to_db_user_id()
     for user_id in users:
         try:
@@ -150,6 +150,8 @@ async def send_to_all_users(text):
                                         f'мире VPN индустрии, можно посмотреть на нашем сайте\n'
                                         f'<a href="https://24perep.ru/">жми сюда</a>',
                                    reply_markup=main_menu)
+            if video_id:
+                await bot.send_video(chat_id=user_id, video=video_id)
             await asyncio.sleep(1)
         except Exception as e:
             await bot.send_message(chat_id='1348491834', text=f"Ошибка отправки сообщения: {e}")
