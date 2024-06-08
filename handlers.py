@@ -72,7 +72,6 @@ async def handle_photo(message: types.Message):
         await send_to_all_users(caption, photo_id=photo_id)
 
 
-
 @dp.message_handler(commands=['start'])
 async def process_start_command(msg: types.Message):
     user_id = msg.from_user.id
