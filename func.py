@@ -139,19 +139,19 @@ async def send_conf(user_id):
         await bot.send_document(chat_id=user_id, document=file, caption="Ваш config", reply_markup=main_menu)
 
 
+# Python
 @dp.async_task
-async def send_to_all_users(text, video_id=None):
+async def send_to_all_users(text, video_id=None, photo_id=None):
     users = await read_to_db_user_id()
     for user_id in users:
         try:
-            await bot.send_message(chat_id=user_id,
-                                   text=f'{text}\n\n'
-                                        f'Всю актуальную информацию, а так же новости в нашем интенсивно меняющимся '
-                                        f'мире VPN индустрии, можно посмотреть на нашем сайте\n'
-                                        f'<a href="https://24perep.ru/">жми сюда</a>',
-                                   reply_markup=main_menu)
+            # await bot.send_message(chat_id=user_id,
+            #                        text=text,
+            #                        reply_markup=main_menu)
             if video_id:
-                await bot.send_video(chat_id=user_id, video=video_id)
+                await bot.send_video(chat_id=user_id, video=video_id, caption=text, reply_markup=main_menu)
+            if photo_id:
+                await bot.send_photo(chat_id=user_id, photo=photo_id, caption=text, reply_markup=main_menu)
             await asyncio.sleep(1)
         except Exception as e:
             await bot.send_message(chat_id='1348491834', text=f"Ошибка отправки сообщения: {e}")

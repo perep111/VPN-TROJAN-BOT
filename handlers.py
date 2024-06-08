@@ -58,7 +58,19 @@ async def handle_video(message: types.Message):
         video = message.video  # Получаем видео из сообщения
         video_id = message.video.file_id  # Получаем идентификатор видео из сообщения
         caption = message.caption  # Получаем подпись к видео
-        await send_to_all_users(caption, video_id)
+        await send_to_all_users(caption, video_id=video_id)
+
+
+# Python
+@dp.message_handler(content_types=types.ContentType.PHOTO)
+async def handle_photo(message: types.Message):
+    if message.from_user.id in admin:
+        # Обработка фото
+        photo = message.photo[-1]  # Получаем фото из сообщения (последний элемент - наибольшее разрешение)
+        photo_id = photo.file_id  # Получаем идентификатор файла фото
+        caption = message.caption  # Получаем подпись к фото
+        await send_to_all_users(caption, photo_id=photo_id)
+
 
 
 @dp.message_handler(commands=['start'])
