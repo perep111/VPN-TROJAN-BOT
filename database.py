@@ -288,6 +288,19 @@ async def is_user_in_wireguard(user_id: int) -> bool:
     return result[0] > 0
 
 
+async def is_user_in_trojan(user_id: int) -> bool:
+    connection = await aiosqlite.connect('vpn-user.db')
+    cursor = await connection.cursor()
+
+    await cursor.execute('SELECT COUNT(*) FROM trojan_users WHERE user_id = ? AND is_vpn = ?',
+                         (user_id, True))
+    result = await cursor.fetchone()
+
+    await connection.close()
+
+    return result[0] > 0
+
+
 async def is_test(tale_name, user_id: int) -> bool:
     connection = await aiosqlite.connect('vpn-user.db')
     cursor = await connection.cursor()

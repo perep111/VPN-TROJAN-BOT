@@ -9,7 +9,7 @@ from func import pre_pay_keyboard_tro, pre_pay_keyboard_wir, delayed_task, send_
 from func import add_wireguard_user, send_to_all_users, send_video_from_file, check_args, device_kb
 from aiogram import types
 from aiogram.types import ContentType
-from database import is_test, count_refs
+from database import is_test, count_refs, is_user_in_trojan
 from database import fetch_data, update_users_db, read_to_db_end_date, is_user_in_db, write_to_db, is_user_in_wireguard
 from admin import get_system_info
 from aiogram.types import ParseMode
@@ -241,10 +241,11 @@ async def get_data(msg: types.Message):
     user = f"{msg.from_user.id}rac"
     data = await fetch_data("SELECT * FROM users WHERE username = '{}'".format(user,))
     wireguard_is = await is_user_in_wireguard(user_id=msg.from_user.id)
+    trojan_is = await is_user_in_trojan(user_id=msg.from_user.id)
 
     # Теперь вы можете обработать результат и отправить его в чат
     # Проверьте, что result не пустой
-    if data and wireguard_is:
+    if trojan_is and wireguard_is:
         download_value = data[0]['download']
         upload_value = data[0]['upload']
         a = round(((download_value + upload_value) / 1073741824), 2)
@@ -265,7 +266,7 @@ async def get_data(msg: types.Message):
                                     f'Продлить тариф: ',
                                reply_markup=instrukt_kb)
 
-    elif data:
+    elif trojan_is:
         download_value = data[0]['download']
         upload_value = data[0]['upload']
         a = round(((download_value + upload_value) / 1073741824), 2)
