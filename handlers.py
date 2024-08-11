@@ -1,3 +1,4 @@
+from functools import wraps
 import logging
 import asyncio
 from aiogram.utils.exceptions import NetworkError, RetryAfter
@@ -17,6 +18,16 @@ from aiogram.types import ParseMode
 admin = [1348491834]
 
 
+def admin_only(func):
+    @wraps(func)
+    async def wrapper(message: types.Message, *args, **kwargs):
+        if message.from_user.id in admin:
+            return await func(message, *args, **kwargs)
+        else:
+            await message.reply("У вас нет прав для выполнения этой команды.")
+    return wrapper
+
+
 @dp.errors_handler()
 async def error_handler(update, exception):
     if isinstance(exception, NetworkError):
@@ -34,42 +45,61 @@ async def error_handler(update, exception):
 
 
 @dp.message_handler(commands=['info'])
+@admin_only
 async def send_info(message: types.Message):
-    if message.from_user.id in admin:
-        system_info = await get_system_info()
-        await message.answer(system_info, parse_mode=ParseMode.MARKDOWN)
-    else:
-        await message.answer('соси')
+    system_info = await get_system_info()
+    await message.answer(system_info, parse_mode=ParseMode.MARKDOWN)
+
+
+@dp.message_handler(commands=['mess'])
+@admin_only
+async def send_mess_user(message: types.Message):
+    args = message.get_args()
+
+    try:
+        # Разделяем аргументы на ID пользователя и текст сообщения
+        user_id, text_message = args.split(' ', 1)
+
+        # Пробуем преобразовать ID пользователя в число
+        user_id = int(user_id)
+
+        # Отправляем сообщение пользователю
+        await bot.send_message(chat_id=user_id, text=text_message)
+        await message.reply(f"Сообщение отправлено пользователю с ID {user_id}.")
+    except ValueError:
+        await message.reply("Пожалуйста, укажите корректный ID пользователя и текст сообщения.")
+    except Exception as e:
+        await message.reply(f"Ошибка: {str(e)}")
 
 
 @dp.message_handler(commands=['read'])
+@admin_only
 async def all_users(message: types.Message):
-    if message.from_user.id in admin:
-        text = message.get_args()
-        await send_to_all_users(text)
-    else:
-        await message.reply("У вас нет прав для выполнения этой команды.")
+    text = message.get_args()
+    await send_to_all_users(text)
 
 
 @dp.message_handler(content_types=types.ContentType.VIDEO)
+@admin_only
 async def handle_video(message: types.Message):
-    if message.from_user.id in admin:
-        # Обработка видео
-        video = message.video  # Получаем видео из сообщения
-        video_id = message.video.file_id  # Получаем идентификатор видео из сообщения
-        caption = message.caption  # Получаем подпись к видео
-        await send_to_all_users(caption, video_id=video_id)
+
+    # Обработка видео
+    video = message.video  # Получаем видео из сообщения
+    video_id = message.video.file_id  # Получаем идентификатор видео из сообщения
+    caption = message.caption  # Получаем подпись к видео
+    await send_to_all_users(caption, video_id=video_id)
 
 
 # Python
 @dp.message_handler(content_types=types.ContentType.PHOTO)
+@admin_only
 async def handle_photo(message: types.Message):
-    if message.from_user.id in admin:
-        # Обработка фото
-        photo = message.photo[-1]  # Получаем фото из сообщения (последний элемент - наибольшее разрешение)
-        photo_id = photo.file_id  # Получаем идентификатор файла фото
-        caption = message.caption  # Получаем подпись к фото
-        await send_to_all_users(caption, photo_id=photo_id)
+    # Обработка фото
+    # Получаем фото из сообщения (последний элемент - наибольшее разрешение)
+    photo = message.photo[-1]
+    photo_id = photo.file_id  # Получаем идентификатор файла фото
+    caption = message.caption  # Получаем подпись к фото
+    await send_to_all_users(caption, photo_id=photo_id)
 
 
 @dp.message_handler(commands=['start'])
@@ -554,3 +584,27 @@ async def process_pay(message: types.Message):
 
         except Exception as e:
             await bot.send_message(chat_id='1348491834', text=f'ошибка оплаты для юзера {user_id}{str(e)}')
+
+
+@dp.message_handler(content_types=types.ContentTypes.ANY)
+async def forward_message_to_admin(message: types.Message):
+    try:
+        # Проверяем наличие имени у пользователя
+        user_name = message.from_user.username or "Имя отсутствует"
+        
+        # Формируем текст сообщения для пересылки
+        forward_text = (
+            f"Сообщение от пользователя @{user_name} (ID: {message.from_user.id}):\n\n"
+            f"{message.text if message.text else 'Не текстовое сообщение'}"
+        )
+
+        # Пересылаем сообщение в ваш чат
+        if message.text:
+            await bot.send_message(chat_id=1348491834, text=forward_text)
+        else:
+            # Если сообщение не текстовое, пересылаем его как есть
+            await bot.send_message(chat_id=1348491834, text=forward_text)
+            await message.forward(chat_id=1348491834)
+
+    except Exception as e:
+        await message.reply(f"Ошибка при пересылке сообщения: {str(e)}")
