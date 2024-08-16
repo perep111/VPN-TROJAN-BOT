@@ -79,10 +79,12 @@ class MarzbanBackend:
 
     def get_user(self, name: str) -> dict:
         response = self._get(f"api/user/{name}")
-        user = response.get("username")
-        status = response.get("status")
-        logger.info(f"get user: {user}, status: {status}")
-        return response
+
+        if response:
+            user = response.get("username")
+            status = response.get("status")
+            logger.info(f"get user: {user}, status: {status}")
+            return response
 
     def disable_user(self, name: str) -> dict:
         data = {
@@ -92,7 +94,6 @@ class MarzbanBackend:
         if response:
             logger.info(
                 f"Disable xray user: {name} success, {response.get('username', 'unknown username')}")
-            print(response['unknown username'])
             check = self.get_user(name)
             time.sleep(0.25)
             if check.get("status") != data.get("status"):
@@ -135,5 +136,7 @@ def info(user):
 
 
 if __name__ == "__main__":
-    # dis = backend.disable_user("1114534531")
-    backend.create_user('arina')
+    # dis = backend.disable_user("kali")
+    # backend.create_user('kali')
+    backend.enable_user('kali')
+    print(backend.get_user("kali"))

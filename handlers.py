@@ -14,6 +14,10 @@ from database import is_test, count_refs, is_user_in_trojan
 from database import fetch_data, update_users_db, read_to_db_end_date, is_user_in_db, write_to_db, is_user_in_wireguard
 from admin import get_system_info
 from aiogram.types import ParseMode
+from marzban import backend
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
 
 admin = [1348491834]
 
@@ -75,8 +79,11 @@ async def send_mess_user(message: types.Message):
 @dp.message_handler(commands=['read'])
 @admin_only
 async def all_users(message: types.Message):
-    text = message.get_args()
-    await send_to_all_users(text)
+    a = backend.get_user('kali')['subscription_url']
+
+    await message.reply(a)
+    # text = message.get_args()
+    # await send_to_all_users(text)
 
 
 @dp.message_handler(content_types=types.ContentType.VIDEO)
@@ -109,25 +116,17 @@ async def process_start_command(msg: types.Message):
     referal_args = msg.get_args()  # /start 123123
     check_referal_args = await check_args(referal_args, msg.from_user.id)
 
-    user_is_wg = await is_user_in_db('users', user_id)
     user_is_tj = await is_user_in_db('trojan_users', user_id)
 
-    if not user_is_wg and not user_is_tj:
-        await write_to_db(user_id=user_id, table_name='users', refer=check_referal_args)
+    if not user_is_tj:
+
         await write_to_db(user_id=user_id, table_name='trojan_users', refer=check_referal_args)
+
         try:
             if check_referal_args and check_referal_args != '0':
-                old_user_is_wg = await is_user_in_wireguard(user_id=check_referal_args)
-                old_user_is_tj = await fetch_data(
-                    "SELECT * FROM users WHERE username = '{}'".format(f"{check_referal_args}rac",))
+                old_user_is_tj = await is_user_in_trojan(user_id=check_referal_args)
 
-                if old_user_is_wg and not old_user_is_tj:
-                    await update_users_db(table_name='users', user_id=check_referal_args, days=15)
-                    await bot.send_message(chat_id=check_referal_args,
-                                           text='по вашей ссылке зарегистрировались\n\n'
-                                                'Вам добавлено 15 дней\n\n'
-                                                'нажмите Мой VPN, что бы узнать срок действия тарифа')
-                elif old_user_is_tj:
+                if old_user_is_tj:
                     await fetch_data(
                         "UPDATE users SET quota = quota + {} WHERE username = '{}'".format('26843545600',
                                                                                            f"{check_referal_args}rac"))
@@ -137,8 +136,7 @@ async def process_start_command(msg: types.Message):
                                                 'Вам добавлено 15 дней протокола trojan\n\n'
                                                 'нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
                                                 'Нажимай Как настроить VPN и получи подробную инструкцию по установке')
-                elif not old_user_is_tj and not old_user_is_wg:
-
+                else:
                     await send_quota(check_referal_args, quota=26843545600)
                     if not await is_user_in_db(table_name='trojan_users', user_id=check_referal_args):
                         await write_to_db(table_name='trojan_users', user_id=check_referal_args, refer=None, is_vpn=1,
@@ -154,7 +152,7 @@ async def process_start_command(msg: types.Message):
             await bot.send_message(chat_id=user_id, text='Вы воспользовались реферальной ссылкой')
 
         except Exception as a:
-            print(a)
+            log.error(f"Ошибка при обработке нажатия start: {a}")
 
     if user_id:
         await bot.send_message(chat_id=msg.chat.id,
@@ -591,7 +589,7 @@ async def forward_message_to_admin(message: types.Message):
     try:
         # Проверяем наличие имени у пользователя
         user_name = message.from_user.username or "Имя отсутствует"
-        
+
         # Формируем текст сообщения для пересылки
         forward_text = (
             f"Сообщение от пользователя @{user_name} (ID: {message.from_user.id}):\n\n"

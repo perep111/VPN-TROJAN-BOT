@@ -155,8 +155,7 @@ async def send_to_all_users(text, video_id=None, photo_id=None):
                                        reply_markup=main_menu)
             await asyncio.sleep(1)
         except Exception as e:
-            await bot.send_message(chat_id='1348491834', text=f"Ошибка отправки сообщения: {e}")
-            print(f'{e}-{user_id}')
+            await bot.send_message(chat_id='1348491834', text=f"Ошибка отправки сообщения: {user_id} - {e}")
             continue
 
 
