@@ -119,24 +119,3 @@ class MarzbanBackend:
 
 
 backend = MarzbanBackend()
-
-
-def create():
-    # Пример создания пользователя
-    new_user = backend.create_user("112255511")
-    logger.info(new_user)
-
-
-def info(user):
-    # Пример получения информации о пользователе
-    user_info = backend.get_user(user)
-    logger.info(user_info['links'][0])
-
-    # backend.enable_user("new_username")
-
-
-if __name__ == "__main__":
-    # dis = backend.disable_user("kali")
-    # backend.create_user('kali')
-    backend.enable_user('kali')
-    print(backend.get_user("kali"))

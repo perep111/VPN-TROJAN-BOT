@@ -3,6 +3,7 @@ import aiosqlite
 from datetime import datetime, timedelta
 from remove import remove_wireguard_user
 from config import bot
+from marzban import backend
 from pay_conf import pay_conf_trojan
 import asyncio
 
@@ -316,11 +317,18 @@ async def is_test(tale_name, user_id: int) -> bool:
 
 async def remove_trojan_user(user_id):
     user = f"{user_id}rac"
-    # await fetch_data("DELETE FROM users WHERE username = '{}'".format(user,))
-    await fetch_data("UPDATE users SET quota = 1, download = 0, upload = 0 WHERE username = '{}'".format(user,))
+
+    data = await fetch_data("SELECT * FROM users WHERE username = '{}'".format(user, ))
+
+    if data:
+        await fetch_data("DELETE FROM users WHERE username = '{}'".format(user,))
+        # await fetch_data("UPDATE users SET quota = 1, download = 0, upload = 0 WHERE username = '{}'".format(user,))
+
+    backend.disable_user(user_id)
+
     try:
         await bot.send_message(chat_id=user_id,
-                               text='<b>😢 Время вашего VPN протокол trojan закончилось,\n'
+                               text='<b>😢 Время вашего VPN закончилось,\n'
                                     'но вы можете продолжить пользоваться сервисом VPN после оплаты</b>\n\n'
                                     'Продлевайте ваш VPN заранее, оставшиеся дни <b>НЕ СГОРЯТ</b>, '
                                     'они добавятся к новому тарифу\n\n'
@@ -334,18 +342,6 @@ async def remove_trojan_user(user_id):
         await asyncio.sleep(1)
 
 
-async def write_password(password, user_id):
-    connection = await aiosqlite.connect('vpn-user.db')
-    cursor = await connection.cursor()
-
-    await cursor.execute(
-        f'UPDATE trojan_users SET password=? WHERE user_id=?',
-        (password, user_id))
-
-    await connection.commit()
-    await connection.close()
-
-
 async def count_refs(user_id: int):
     try:
         conn = await aiosqlite.connect('vpn-user.db')
@@ -355,7 +351,7 @@ async def count_refs(user_id: int):
             SELECT refer FROM users WHERE refer=?
             UNION ALL
             SELECT refer FROM trojan_users WHERE refer=?
-        ''',(user_id, user_id))
+        ''', (user_id, user_id))
         select_order = await select_user_id.fetchall()
 
         users_dict = [i[0] for i in select_order]

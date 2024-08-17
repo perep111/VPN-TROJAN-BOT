@@ -39,15 +39,14 @@ async def on_shutdown(dp):
 
 
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
-    # loop = asyncio.get_event_loop()
-    # loop.create_task(create_db())
-    # start_webhook(
-    #     dispatcher=dp,
-    #     webhook_path=WEBHOOK_PATH,
-    #     on_startup=on_startup,
-    #     on_shutdown=on_shutdown,
-    #     skip_updates=False,
-    #     host=WEBAPP_HOST,
-    #     port=WEBAPP_PORT,
-    # )
+    loop = asyncio.get_event_loop()
+    loop.create_task(create_db())
+    start_webhook(
+        dispatcher=dp,
+        webhook_path=WEBHOOK_PATH,
+        on_startup=on_startup,
+        on_shutdown=on_shutdown,
+        skip_updates=False,
+        host=WEBAPP_HOST,
+        port=WEBAPP_PORT,
+    )
