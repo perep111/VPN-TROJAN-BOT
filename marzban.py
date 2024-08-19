@@ -23,6 +23,8 @@ class MarzbanBackend:
             "GET", url, verify=False, headers=self.headers)
         if response.status_code == 200:
             return response.json()
+        else:
+            logger.error(f'GET not 200 status_code! {path}')
 
     def _post(self, path: str, data=None) -> dict:
         url = f"{self.base_url}/{path}"
@@ -32,6 +34,8 @@ class MarzbanBackend:
             "POST", url, headers=self.headers, data=data)
         if response.status_code == 201 or response.status_code == 200:
             return response.json()
+        else:
+            logger.error(f'POST not 200 status_code! {path}, data: {data}')
 
     def _put(self, path: str, data=None) -> dict:
         url = f"{self.base_url}/{path}"

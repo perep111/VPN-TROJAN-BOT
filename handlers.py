@@ -349,14 +349,22 @@ async def trial_tariff(call: types.CallbackQuery):
             await write_to_db(user_id=call.from_user.id, is_vpn=1, table_name='trojan_users', refer=0, days=3, test=1)
 
         link = backend.create_user(call.from_user.id)
-        await send_message_link(call.from_user.id, link['subscription_url'])
 
-        await bot.send_message(chat_id=call.message.chat.id,
-                               text='Вам доступно 3 дня VPN'
-                                    ' нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
-                                    'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
-                               reply_markup=main_menu)
-        await send_message_mi(user=call.from_user.id, text='подключил Пробный VPN', name=call.from_user.username)
+        if link is None:
+            log.info(f'линк: для юзера {call.message.chat.id} == None')
+            await bot.send_message(call.message.chat.id, 'возннникла ошибка с созданием профиля\n'
+                                   'обратитесь в поддержку @f_o_x_y_s')
+            await bot.send_message(chat_id='1348491834', text=f'ошибка тестовой ссылки для {call.message.chat.id}')
+
+        else:    
+            await send_message_link(call.message.chat.id, link['subscription_url'])  
+
+            await bot.send_message(chat_id=call.message.chat.id,
+                                text='Вам доступно 3 дня VPN'
+                                        ' нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
+                                        'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
+                                reply_markup=main_menu)
+            await send_message_mi(user=call.from_user.id, text='подключил Пробный VPN', name=call.from_user.username)
 
     else:
 
@@ -472,8 +480,6 @@ async def process_pay(message: types.Message):
         # pay_id = message.successful_payment.provider_payment_charge_id
         await bot.send_message(message.from_user.id, 'Поздравляю с покупкой')
         # name = message.from_user.username
-        user = f"{user_id}rac"
-        quota = '53687091200'
 
         data = backend.get_user(message.from_user.id)
         trojan_is = await is_user_in_db(table_name='trojan_users', user_id=message.from_user.id)
@@ -487,14 +493,22 @@ async def process_pay(message: types.Message):
             await write_to_db(table_name='trojan_users', user_id=user_id, refer=0, is_vpn=1, days=30, test=1)
             
             link = backend.create_user(user_id)
-            await send_message_link(user_id, link['subscription_url'])
 
-            await bot.send_message(chat_id=message.chat.id,
-                                   text='Вам доступно 30 дней VPN нажмите Мой VPN, '
-                                        'что бы узнать срок действия тарифа\n\n'
-                                        'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
-                                   reply_markup=main_menu)
-            await send_message_mi(user=user_id, text='Купил Trojan', name=name)
+            if link is None:
+                log.info(f'линк: для юзера {message.from_user.id} == None')
+                await bot.send_message(message.from_user.id, 'возннникла ошибка с созданием профиля\n'
+                                    'обратитесь в поддержку @f_o_x_y_s')
+                
+                await bot.send_message(chat_id='1348491834', text=f'ошибка оплаченой ссылки для {message.from_user.id}')
+            else:    
+                await send_message_link(message.from_user.id, link['subscription_url'])  
+
+                await bot.send_message(chat_id=message.chat.id,
+                                    text='Вам доступно 30 дней VPN нажмите Мой VPN, '
+                                            'что бы узнать срок действия тарифа\n\n'
+                                            'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
+                                    reply_markup=main_menu)
+                await send_message_mi(user=user_id, text='Купил Trojan', name=name)
 
         elif data and trojan_is:
 
@@ -516,19 +530,26 @@ async def process_pay(message: types.Message):
         elif trojan_is and not data:
 
             link = backend.create_user(user_id)
-            await send_message_link(user_id, link['subscription_url'])
+
+            if link is None:
+                log.info(f'линк: для юзера {message.from_user.id} == None')
+                await bot.send_message(message.from_user.id, 'возннникла ошибка с созданием профиля\n'
+                                    'обратитесь в поддержку @f_o_x_y_s')
+                await bot.send_message(chat_id='1348491834', text=f'ошибка оплаченой ссылки для {message.from_user.id}')
+            else:    
+                await send_message_link(message.from_user.id, link['subscription_url'])  
 
 
-            await update_users_db(table_name='trojan_users', user_id=user_id, days=30)
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=f'Платежный идентификатор\n'f'{pay_id}',
-                                   reply_markup=main_menu)
-            await bot.send_message(chat_id=message.chat.id,
-                                   text='Вам доступно еще 30 дней,'
-                                        ' нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
-                                        'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
-                                   reply_markup=main_menu)
-            await send_message_mi(user=user_id, text='Добавил 30 дней VLESS', name=name)
+                await update_users_db(table_name='trojan_users', user_id=user_id, days=30)
+                await bot.send_message(chat_id=message.chat.id,
+                                    text=f'Платежный идентификатор\n'f'{pay_id}',
+                                    reply_markup=main_menu)
+                await bot.send_message(chat_id=message.chat.id,
+                                    text='Вам доступно еще 30 дней,'
+                                            ' нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
+                                            'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
+                                    reply_markup=main_menu)
+                await send_message_mi(user=user_id, text='Добавил 30 дней VLESS', name=name)
 
     elif message.successful_payment.invoice_payload == 'payment_wireguard':
 
