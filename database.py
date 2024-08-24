@@ -1,3 +1,4 @@
+import logging
 import aiomysql
 import aiosqlite
 from datetime import datetime, timedelta
@@ -7,6 +8,9 @@ from marzban import backend
 from pay_conf import pay_conf_trojan
 import asyncio
 
+# Настройка логгера
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Ваши настройки для подключения к MySQL
 mysql_config = {
@@ -324,7 +328,12 @@ async def remove_trojan_user(user_id):
         await fetch_data("DELETE FROM users WHERE username = '{}'".format(user,))
         # await fetch_data("UPDATE users SET quota = 1, download = 0, upload = 0 WHERE username = '{}'".format(user,))
 
-    backend.disable_user(user_id)
+        
+    a = backend.disable_user(user_id)
+    if not a:
+        logger.info(f'Не удалось disable: {user_id}')
+        await bot.send_message(chat_id='1348491834', text=f'Не дисайбл юзер: {user_id}')
+
 
     try:
         await bot.send_message(chat_id=user_id,

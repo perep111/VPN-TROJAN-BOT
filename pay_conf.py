@@ -47,7 +47,7 @@ async def pay_conf_wireguard(chat_id):
 
 async def pay_conf_trojan(chat_id):
     await bot.send_invoice(chat_id=chat_id,
-                           title='VPN TROJAN PROTOKOL',
+                           title='VPN PROTOKOL',
                            description='Безграничные возможности, которые откроются со всеми '
                                        'запрещенными в РФ соцсетями',
                            payload='payment_trojan',

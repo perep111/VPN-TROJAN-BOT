@@ -5,6 +5,10 @@ from database import read_to_db_user_id, check_users_vpn_service, is_user_in_db
 from database import check_notifications
 from marzban import backend
 
+# Настройка логгера
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 async def check_users_periodically():
     while True:

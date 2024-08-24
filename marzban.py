@@ -13,51 +13,64 @@ class MarzbanBackend:
     def __init__(self):
         self.session = requests.Session()
         self.headers = {"accept": "application/json"}
-        self.base_url = "https://marzban.perep.site"  # Замените на ваш URL API
-        if not self.headers.get("Authorization"):
-            self.authorize()
+        self.base_url = "https://marzban.perep.site"
+        self.authorize()
 
     def _get(self, path: str) -> dict:
         url = f"{self.base_url}/{path}"
-        response = self.session.request(
-            "GET", url, verify=False, headers=self.headers)
+        response = self.session.get(url, verify=False, headers=self.headers)
+        if response.status_code == 401:  # Unauthorized
+            logger.warning("Unauthorized, reauthorizing...")
+            self.authorize()
+            response = self.session.get(url, verify=False, headers=self.headers)
         if response.status_code == 200:
             return response.json()
         else:
             logger.error(f'GET not 200 status_code! {path}')
+            return {}
 
     def _post(self, path: str, data=None) -> dict:
         url = f"{self.base_url}/{path}"
         if not path == "api/admin/token":
             data = json.dumps(data)
-        response = self.session.request(
-            "POST", url, headers=self.headers, data=data)
-        if response.status_code == 201 or response.status_code == 200:
+        response = self.session.post(url, headers=self.headers, data=data)
+        if response.status_code == 401:  # Unauthorized
+            logger.warning("Unauthorized, reauthorizing...")
+            self.authorize()
+            response = self.session.post(url, headers=self.headers, data=data)
+        if response.status_code in [200, 201]:
             return response.json()
         else:
             logger.error(f'POST not 200 status_code! {path}, data: {data}')
+            return {}
 
     def _put(self, path: str, data=None) -> dict:
         url = f"{self.base_url}/{path}"
         json_data = json.dumps(data)
-        response = self.session.put(
-            url, headers=self.headers, data=json_data)
-
+        response = self.session.put(url, headers=self.headers, data=json_data)
+        if response.status_code == 401:  # Unauthorized
+            logger.warning("Unauthorized, reauthorizing...")
+            self.authorize()
+            response = self.session.put(url, headers=self.headers, data=json_data)
         if response.status_code == 200:
             logger.info(f"cmd xray PUT {path}, data: {data}")
             return response.json()
         else:
-            logger.error(
-                f"cmd xray PUT not 200 status_code! {path}, data: {data}")
+            logger.error(f"cmd xray PUT not 200 status_code! {path}, data: {data}")
+            return {}
 
     def authorize(self) -> None:
         data = {
-            "username": "perep",  # Замените на ваше имя пользователя
-            "password": "perep"  # Замените на ваш пароль
+            "username": "perep",
+            "password": "perep"
         }
         response = self._post("api/admin/token", data=data)
         token = response.get("access_token")
-        self.headers["Authorization"] = f"Bearer {token}"
+        if token:
+            self.headers["Authorization"] = f"Bearer {token}"
+            logger.info("Authorization successful")
+        else:
+            logger.error("Authorization failed")
         # logger.info(f"Token obtained: {token}")
 
     def create_user(self, name: str) -> dict:
