@@ -145,11 +145,15 @@ async def process_start_command(msg: types.Message):
                         link = backend.create_user(check_referal_args)
                         await send_message_link(check_referal_args, link['subscription_url'])
 
+                    else:
+                        backend.enable_user(check_referal_args)
+
                     if not await is_user_in_db(table_name='trojan_users', user_id=check_referal_args):
                         await write_to_db(table_name='trojan_users', user_id=check_referal_args, refer=None, is_vpn=1,
                                           days=15)
                     else:
                         await update_users_db(table_name='trojan_users', user_id=check_referal_args, days=15)
+
                     await bot.send_message(chat_id=check_referal_args,
                                            text='по вашей ссылке зарегистрировались\n\n'
                                                 'Вам добавлено 15 дней протокола trojan\n\n'
