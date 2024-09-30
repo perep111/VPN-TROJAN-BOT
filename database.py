@@ -357,16 +357,14 @@ async def count_refs(user_id: int):
         cursor = await conn.cursor()
 
         select_user_id = await cursor.execute('''
-            SELECT refer FROM users WHERE refer=?
-            UNION ALL
             SELECT refer FROM trojan_users WHERE refer=?
-        ''', (user_id, user_id))
+        ''', (user_id,))
         select_order = await select_user_id.fetchall()
 
         users_dict = [i[0] for i in select_order]
 
         await conn.close()
-        return len(users_dict) // 2
+        return len(users_dict)
 
     except Exception as e:
         print(e)

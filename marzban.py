@@ -13,7 +13,7 @@ class MarzbanBackend:
     def __init__(self):
         self.session = requests.Session()
         self.headers = {"accept": "application/json"}
-        self.base_url = "https://marzban.perep.site"
+        self.base_url = "https://marzban.24perep.ru"
         self.authorize()
 
     def _get(self, path: str) -> dict:
