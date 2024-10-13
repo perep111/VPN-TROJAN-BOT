@@ -102,7 +102,6 @@ async def send_message_mi(user, text, name=None):
         await bot.send_message(chat_id='1348491834', text=f"{text} {user}")
 
 
-
 async def send_conf(user_id):
     with open(f'/etc/wireguard/configs/vpn{str(user_id)}.conf', 'rb') as file:
         await bot.send_document(chat_id=user_id, document=file, caption="Ваш config", reply_markup=main_menu)
@@ -112,7 +111,12 @@ async def send_conf(user_id):
 @dp.async_task
 async def send_to_all_users(text, video_id=None, photo_id=None):
     users = await read_to_db_user_id()
+
+    count_err = 0
+    count_mess = 0
+
     for user_id in users:
+
         try:
             if video_id:
                 await bot.send_video(chat_id=user_id, video=video_id, caption=text, reply_markup=main_menu)
@@ -123,9 +127,14 @@ async def send_to_all_users(text, video_id=None, photo_id=None):
                                        text=text,
                                        reply_markup=main_menu)
             await asyncio.sleep(1)
+            count_mess += 1
+
         except Exception as e:
-            await bot.send_message(chat_id='1348491834', text=f"Ошибка отправки сообщения: {user_id} - {e}")
+            logger.error(f'Ошибка отправки сообщения: {user_id} - {e}')
+            count_err += 1
             continue
+
+    await bot.send_message(chat_id='1348491834', text=f"Сообщений доставлено: {count_mess}\n\nОшибок отправки: {count_err}")
 
 
 async def send_video_from_file(chat_id, video, caption):

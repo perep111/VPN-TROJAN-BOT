@@ -205,7 +205,7 @@ async def referal(mess: types.Message):
 @dp.message_handler(text='💸 Тарифы')
 async def mess_replay(msg: types.Message):
     await bot.send_message(chat_id=msg.chat.id,
-                           text='☕ Тариф 30 дней VPN: 110р\n\n'
+                           text='☕ Тариф 30 дней VPN: 150р\n\n'
                                 '🍄 Пробный тариф \n'
                                 '(доступно один раз для каждого пользователя)\n\n',
                            reply_markup=connect_vpn)
@@ -392,7 +392,7 @@ async def extend_tariff(call: types.CallbackQuery):
 
     elif data:
         await bot.send_message(chat_id=call.message.chat.id,
-                               text='☕ Добавить еще месяц: 110р\n',
+                               text='☕ Добавить еще месяц: 150р\n',
                                reply_markup=extend_vpn)
 
     else:
@@ -428,8 +428,8 @@ async def pay_message(call: types.CallbackQuery):
                                 message_id=call.message.message_id,
                                 text='☕ VPN / 1 месяц\n\n'
                                      'При оплате на МЕСЯЦ:\n'
-                                     '👉 110 рублей\n'
-                                     'ℹ 3.5 руб. в день\n\n'
+                                     '👉 150 рублей\n'
+                                     'ℹ 5 руб. в день\n\n'
                                      '⚠️В любой момент вы можете перейти на любой другой тариф\n\n'
                                      'Сделайте выбор:',
                                 reply_markup=pre_pay_keyboard_tro)

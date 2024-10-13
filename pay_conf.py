@@ -8,7 +8,7 @@ def recept():
             {
                 "description": "Покупка цифрового контента",
                 "quantity": "1",
-                "amount": {"value": "110.00", "currency": "RUB"},
+                "amount": {"value": "150.00", "currency": "RUB"},
                 "vat_code": 1
             }
         ]
@@ -41,7 +41,7 @@ async def pay_conf_wireguard(chat_id):
                                ),
                                LabeledPrice(
                                    label='Скидка',
-                                   amount=-50_00
+                                   amount=-10_00
                                )])
 
 
@@ -65,5 +65,5 @@ async def pay_conf_trojan(chat_id):
                                ),
                                LabeledPrice(
                                    label='Скидка',
-                                   amount=-50_00
+                                   amount=-10_00
                                )])
