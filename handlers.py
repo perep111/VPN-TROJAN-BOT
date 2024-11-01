@@ -28,7 +28,27 @@ def admin_only(func):
         if message.from_user.id in admin:
             return await func(message, *args, **kwargs)
         else:
-            await message.reply("У вас нет прав для выполнения этой команды.")
+            try:
+                # Проверяем наличие имени у пользователя
+                user_name = message.from_user.username or "Имя отсутствует"
+
+                # Формируем текст сообщения для пересылки
+                forward_text = (
+                    f"Сообщение от пользователя @{user_name} ID: {message.from_user.id}\n\n"
+                    f"{message.text if message.text else 'Не текстовое сообщение'}"
+                )
+
+                # Пересылаем сообщение в ваш чат
+                if message.text:
+                    await bot.send_message(chat_id=1348491834, text=forward_text)
+                else:
+                    # Если сообщение не текстовое, пересылаем его как есть
+                    await bot.send_message(chat_id=1348491834, text=forward_text)
+                    await message.forward(chat_id=1348491834)
+
+            except Exception as e:
+                await message.reply(f"Ошибка при пересылке сообщения: {str(e)}")
+
     return wrapper
 
 
@@ -44,7 +64,7 @@ async def error_handler(update, exception):
         return True  # Обработка завершена, можно продолжить выполнение
 
     else:
-        print(f'хз че за ошибка...{exception}')
+        logging.error(f'хз че за ошибка...{exception}')
         return True
 
 
@@ -568,27 +588,3 @@ async def process_pay(message: types.Message):
 
         except Exception as e:
             await bot.send_message(chat_id='1348491834', text=f'ошибка оплаты для юзера {user_id}{str(e)}')
-
-
-@dp.message_handler(content_types=types.ContentTypes.ANY)
-async def forward_message_to_admin(message: types.Message):
-    try:
-        # Проверяем наличие имени у пользователя
-        user_name = message.from_user.username or "Имя отсутствует"
-
-        # Формируем текст сообщения для пересылки
-        forward_text = (
-            f"Сообщение от пользователя @{user_name} (ID: {message.from_user.id}):\n\n"
-            f"{message.text if message.text else 'Не текстовое сообщение'}"
-        )
-
-        # Пересылаем сообщение в ваш чат
-        if message.text:
-            await bot.send_message(chat_id=1348491834, text=forward_text)
-        else:
-            # Если сообщение не текстовое, пересылаем его как есть
-            await bot.send_message(chat_id=1348491834, text=forward_text)
-            await message.forward(chat_id=1348491834)
-
-    except Exception as e:
-        await message.reply(f"Ошибка при пересылке сообщения: {str(e)}")
