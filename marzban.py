@@ -2,6 +2,8 @@ import time
 import requests
 import json
 import logging
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Настройка логгера
 logging.basicConfig(level=logging.INFO)

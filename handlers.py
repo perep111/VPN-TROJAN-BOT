@@ -4,14 +4,13 @@ import asyncio
 from aiogram.utils.exceptions import NetworkError, RetryAfter
 from aiogram.utils.deep_linking import get_start_link
 from config import dp, bot
-from pay_conf import pay_conf_wireguard, pay_conf_trojan
-from func import main_menu, connect_vpn, instrukt_kb, extend_vpn,send_message_link
-from func import pre_pay_keyboard_tro, pre_pay_keyboard_wir, delayed_task, send_message_mi
-from func import send_to_all_users, send_video_from_file, check_args, device_kb
+from func import main_menu, connect_vpn, instrukt_kb, send_message_link
+from func import delayed_task, send_message_mi
+from func import send_to_all_users, send_video_from_file, check_args, device_kb, pay_inlane
 from aiogram import types
 from aiogram.types import ContentType
 from database import is_test, count_refs, is_user_in_trojan
-from database import fetch_data, update_users_db, read_to_db_end_date, is_user_in_db, write_to_db, is_user_in_wireguard
+from database import update_users_db, read_to_db_end_date, is_user_in_db, write_to_db
 from admin import get_system_info
 from aiogram.types import ParseMode
 from marzban import backend
@@ -47,7 +46,8 @@ def admin_only(func):
                     await message.forward(chat_id=1348491834)
 
             except Exception as e:
-                await message.reply(f"Ошибка при пересылке сообщения: {str(e)}")
+                await message.reply(f"Ошибка при пересылке сообщения")
+                await bot.send_message(chat_id=1348491834, text=f'Ошибка при пересылке сообщения от {message.from_user.id}\n\n{str(e)}')
 
     return wrapper
 
@@ -148,6 +148,9 @@ async def process_start_command(msg: types.Message):
 
         try:
             if check_referal_args and check_referal_args != '0':
+
+                await bot.send_message(chat_id=user_id, text='Вы воспользовались реферальной ссылкой')
+                
                 old_user_is_tj = await is_user_in_trojan(user_id=check_referal_args)
 
                 if old_user_is_tj:
@@ -180,7 +183,6 @@ async def process_start_command(msg: types.Message):
                                                 'нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
                                                 'Нажимай Как настроить VPN и получи подробную инструкцию по установке')
 
-            await bot.send_message(chat_id=user_id, text='Вы воспользовались реферальной ссылкой')
 
         except Exception as a:
             log.error(f"Ошибка при обработке нажатия start: {a}")
@@ -295,30 +297,12 @@ async def send_instruct_ap(call: types.CallbackQuery):
 @dp.message_handler(text='🔐 Мой VPN')
 async def get_data(msg: types.Message):
 
-    wireguard_is = await is_user_in_wireguard(user_id=msg.from_user.id)
     trojan_is = await is_user_in_trojan(user_id=msg.from_user.id)
 
     # Теперь вы можете обработать результат и отправить его в чат
     # Проверьте, что result не пустой
-    if trojan_is and wireguard_is:
 
-        date_to_tro = await read_to_db_end_date(user_id=msg.from_user.id, table_name='trojan_users')
-        date_to_wire = await read_to_db_end_date(user_id=msg.from_user.id, table_name='users')
-        if date_to_wire is None or len(date_to_wire) < 0:
-            date_to_wire = ['Ты какой то читер',]
-        if date_to_tro is None or len(date_to_tro) < 0:
-            date_to_tro = ['Ты какой то читер конкретный',]
-
-        await bot.send_message(chat_id=msg.chat.id,
-                               text=f'🌟 Ваш тариф:\n'
-                                    f'🟢 активен до: {date_to_tro[0]}\n\n'
-                                    f'📲 так же у вас подключен WireGuard \n'
-                                    f'🟢 активен до {date_to_wire[0]}\n\n'
-                                    f'⚠️Продлевайте тариф заранее, оставшиеся дни ДОБАВЯТСЯ, не сгорят\n'
-                                    f'Продлить тариф: ',
-                               reply_markup=instrukt_kb)
-
-    elif trojan_is:
+    if trojan_is:
 
         date_do = await read_to_db_end_date(user_id=msg.from_user.id, table_name='trojan_users')
         if date_do is None or len(date_do) < 0:
@@ -331,17 +315,6 @@ async def get_data(msg: types.Message):
                                     f'Продлить тариф: ',
                                reply_markup=instrukt_kb)
 
-    elif wireguard_is:
-        date_to_wire = await read_to_db_end_date(user_id=msg.from_user.id, table_name='users')
-        if date_to_wire is None or len(date_to_wire) < 0:
-            date_to_wire = ['Ты какой то читер',]
-
-        await bot.send_message(chat_id=msg.chat.id,
-                               text=f'У вас активен WireGuard до {date_to_wire[0]}\n\n'
-                                    f'Переходите на новый тариф, который не боится блокировок.\n\n'
-                                    f'⚠️Продлевайте тариф заранее, оставшиеся дни ДОБАВЯТСЯ, не сгорят\n'
-                                    f'Продлить тариф: ',
-                               reply_markup=instrukt_kb)
 
     else:
 
@@ -359,10 +332,9 @@ async def get_data(msg: types.Message):
 async def trial_tariff(call: types.CallbackQuery):
     await call.answer()
     data_test = await is_test(user_id=call.from_user.id, tale_name='trojan_users')
-    data_trojan = await fetch_data("SELECT * FROM users WHERE username = '{}'".format(f"{call.from_user.id}rac", ))
     data_VLESS = backend.get_user(call.from_user.id)
 
-    if not data_test and not data_trojan and not data_VLESS:
+    if not data_test and not data_VLESS:
         if await is_user_in_db(table_name='trojan_users', user_id=call.from_user.id):
             await update_users_db(table_name='trojan_users', user_id=call.from_user.id, days=3, test=1)
 
@@ -385,6 +357,7 @@ async def trial_tariff(call: types.CallbackQuery):
                                         ' нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
                                         'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
                                 reply_markup=main_menu)
+            await delayed_task(call.message.chat.id)
             await send_message_mi(user=call.from_user.id, text='подключил Пробный VPN', name=call.from_user.username)
 
     else:
@@ -397,28 +370,16 @@ async def trial_tariff(call: types.CallbackQuery):
 @dp.callback_query_handler(text="extend_tariff")
 async def extend_tariff(call: types.CallbackQuery):
     await call.answer()
-    user = f"{call.from_user.id}rac"
-    data = await fetch_data("SELECT * FROM users WHERE username = '{}'".format(user, ))
-    data_VLESS = backend.get_user(call.from_user.id)
-    wireguard_is = await is_user_in_wireguard(user_id=call.from_user.id)
 
-    if data or data_VLESS and wireguard_is:
+    data_VLESS = backend.get_user(call.from_user.id)
+
+    if data_VLESS:
         await bot.send_message(chat_id=call.message.chat.id,
                                text='🎲 Отлично что вы пробуете новый протокол, '
-                                    'Можете добавить еще месяц протокола 🥇WLESS\n\n'
-                                    'или оставайтесь с WireGuard\n'
-                                    'Но я предупреждал о возможных блокировках🙄',
+                                    'Можете добавить еще месяц протокола 🥇WLESS',
                                reply_markup=connect_vpn)
 
-    elif data:
-        await bot.send_message(chat_id=call.message.chat.id,
-                               text='☕ Добавить еще месяц: 150р\n',
-                               reply_markup=extend_vpn)
-
     else:
-        await bot.send_message(chat_id=call.message.chat.id,
-                               text='<b>Внимание, протокол Wireguard больше нельзя купить,'
-                                    'рекомендую перейти но новый протокол VLESS</b>')
         await bot.send_message(chat_id=call.message.chat.id,
                                text='🦞 Переходите на новый протокол WLESS, '
                                     'пробуйте тестовый период бесплатно\n\n',
@@ -444,15 +405,17 @@ async def cancellation(call: types.CallbackQuery):
 @dp.callback_query_handler(text="joy_trojan")
 async def pay_message(call: types.CallbackQuery):
     await call.answer()
+    user_name = f"@{call.from_user.username}" if call.from_user.username else None
+
     await bot.edit_message_text(chat_id=call.message.chat.id,
-                                message_id=call.message.message_id,
-                                text='☕ VPN / 1 месяц\n\n'
-                                     'При оплате на МЕСЯЦ:\n'
-                                     '👉 150 рублей\n'
-                                     'ℹ 5 руб. в день\n\n'
-                                     '⚠️В любой момент вы можете перейти на любой другой тариф\n\n'
-                                     'Сделайте выбор:',
-                                reply_markup=pre_pay_keyboard_tro)
+                            message_id=call.message.message_id,
+                            text='☕ VPN / 1 месяц\n\n'
+                                    'При оплате на МЕСЯЦ: 👉 150 рублей\n'
+                                    'ℹ 5 руб. в день\n\n'
+                                    'Хочешь заплатить на несколько месяцев и бегранично пользоваться сервисом,\n'
+                                    'Напиши в поддержку для индивидуального расщета со скидкой @f_o_x_y_s',
+                                    reply_markup=pay_inlane(call.message.chat.id, user_name)
+                            )
 
 
 @dp.callback_query_handler(lambda c: c.data == 'back')
@@ -462,129 +425,3 @@ async def push_cancel(call: types.CallbackQuery):
                                 message_id=call.message.message_id,
                                 text='Вы отказались, мне <b>очень жаль</b>')
 
-
-@dp.callback_query_handler(lambda c: c.data.startswith('pre_pay_'))
-async def menu_message(call: types.CallbackQuery):
-    await call.answer()
-    data = call.data
-    if data == "pre_pay_tro":
-
-        await bot.edit_message_text(chat_id=call.message.chat.id,
-                                    message_id=call.message.message_id,
-                                    text='👇🏻')
-        await pay_conf_trojan(call.message.chat.id)
-
-    elif data == "pre_pay_wir":
-
-        await bot.edit_message_text(chat_id=call.message.chat.id,
-                                    message_id=call.message.message_id,
-                                    text='👇🏻')
-        await pay_conf_wireguard(call.message.chat.id)
-
-
-@dp.pre_checkout_query_handler()
-async def process_pre_checkout_query(query: types.PreCheckoutQuery):
-    # a = query.total_amount
-    # await bot.send_message(chat_id=query.from_user.id, text=f'{a}')
-    await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
-
-
-@dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT)
-async def process_pay(message: types.Message):
-
-    name = message.from_user.username
-    user_id = message.from_user.id
-    pay_id = message.successful_payment.provider_payment_charge_id
-
-
-    if message.successful_payment.invoice_payload == 'payment_trojan':
-        # pay_id = message.successful_payment.provider_payment_charge_id
-        await bot.send_message(message.from_user.id, 'Поздравляю с покупкой')
-        # name = message.from_user.username
-
-        data = backend.get_user(message.from_user.id)
-        trojan_is = await is_user_in_db(table_name='trojan_users', user_id=message.from_user.id)
-
-        if not data and not trojan_is:
-
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=f'Платежный идентификатор\n'f'{pay_id}',
-                                   reply_markup=main_menu)
-
-            await write_to_db(table_name='trojan_users', user_id=user_id, refer=0, is_vpn=1, days=30, test=1)
-            
-            link = backend.create_user(user_id)
-
-            if link is None:
-                log.info(f'линк: для юзера {message.from_user.id} == None')
-                await bot.send_message(message.from_user.id, 'возннникла ошибка с созданием профиля\n'
-                                    'обратитесь в поддержку @f_o_x_y_s')
-                
-                await bot.send_message(chat_id='1348491834', text=f'ошибка оплаченой ссылки для {message.from_user.id}')
-            else:    
-                await send_message_link(message.from_user.id, link['subscription_url'])  
-
-                await bot.send_message(chat_id=message.chat.id,
-                                    text='Вам доступно 30 дней VPN нажмите Мой VPN, '
-                                            'что бы узнать срок действия тарифа\n\n'
-                                            'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
-                                    reply_markup=main_menu)
-                await send_message_mi(user=user_id, text='Купил Trojan', name=name)
-
-        elif data and trojan_is:
-
-            backend.enable_user(user_id)
-
-
-            await bot.send_message(chat_id=message.chat.id,
-                                   text='Вам добавлено еще 30 дней нажмите Мой VPN, '
-                                        'что бы узнать срок действия тарифа',
-                                   reply_markup=main_menu)
-
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=f'Платежный идентификатор\n'f'{pay_id}',
-                                   reply_markup=main_menu)
-            
-            await send_message_link(message.from_user.id, data['subscription_url'])
-
-            await update_users_db(table_name='trojan_users', user_id=user_id, days=30)
-            await send_message_mi(user=user_id, text='Добавил 30 дней VLESS', name=name)
-
-        elif trojan_is and not data:
-
-            link = backend.create_user(user_id)
-
-            if link is None:
-                log.info(f'линк: для юзера {message.from_user.id} == None')
-                await bot.send_message(message.from_user.id, 'возннникла ошибка с созданием профиля\n'
-                                    'обратитесь в поддержку @f_o_x_y_s')
-                await bot.send_message(chat_id='1348491834', text=f'ошибка оплаченой ссылки для {message.from_user.id}')
-            else:    
-                await send_message_link(message.from_user.id, link['subscription_url'])  
-
-
-                await update_users_db(table_name='trojan_users', user_id=user_id, days=30)
-                await bot.send_message(chat_id=message.chat.id,
-                                    text=f'Платежный идентификатор\n'f'{pay_id}',
-                                    reply_markup=main_menu)
-                await bot.send_message(chat_id=message.chat.id,
-                                    text='Вам доступно еще 30 дней,'
-                                            'нажмите Мой VPN, что бы узнать срок действия тарифа\n\n'
-                                            'Нажимай Как настроить VPN и получи подробную инструкцию по установке',
-                                    reply_markup=main_menu)
-                await send_message_mi(user=user_id, text='Добавил 30 дней VLESS', name=name)
-
-    elif message.successful_payment.invoice_payload == 'payment_wireguard':
-
-        try:
-
-            await update_users_db(table_name='users', user_id=user_id, days=30)
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=f'Платежный идентификатор\n'
-                                        f'{pay_id}')
-            await send_message_mi(user=user_id, text='оплатил WireGuard', name=name)
-
-            asyncio.create_task(delayed_task(user_id))
-
-        except Exception as e:
-            await bot.send_message(chat_id='1348491834', text=f'ошибка оплаты для юзера {user_id}{str(e)}')
