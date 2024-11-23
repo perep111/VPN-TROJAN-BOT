@@ -20,10 +20,6 @@ async def yookassa_webhook_handler(request: web.Request):
         # Обработка статуса оплаты
         event = data.get("event", "")
         if event == "payment.succeeded":
-            # if payment_id and payment_id in PAYMENT_TRACKER:
-            #     user_id = PAYMENT_TRACKER[payment_id]
-            #     await bot.send_message(user_id, "Ваш платеж успешно завершен!")
-            #     del PAYMENT_TRACKER[payment_id]
 
             metadata = data.get("object", {}).get("metadata", {})
 

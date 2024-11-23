@@ -1,4 +1,5 @@
 import asyncio
+import os
 import random
 import string
 import yookassa
@@ -9,13 +10,16 @@ from config import *
 from database import read_to_db_user_id, check_users_vpn_service, is_user_in_db
 from database import check_notifications
 from marzban import backend
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Настройка логгера
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-yookassa.Configuration.secret_key = "live_5RuiSUz71qj19Rt-1eSFhKKNWRgdOTmpuD9KZ4SDv_A"
-yookassa.Configuration.account_id = "215781"
+yookassa.Configuration.secret_key = os.getenv('SECRET_KEY')
+yookassa.Configuration.account_id = os.getenv('ACCOUNT_ID')
 
 
 def generate_random_email():
