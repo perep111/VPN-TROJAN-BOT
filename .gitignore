@@ -5,3 +5,7 @@ instr-apple.MP4
 instr-android.MP4
 instr-wire.MP4
 venv/
+__pycache__/
+vpn-user.db
+.vscode/
+111.session.sql

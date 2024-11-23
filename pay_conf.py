@@ -8,7 +8,7 @@ def recept():
             {
                 "description": "Покупка цифрового контента",
                 "quantity": "1",
-                "amount": {"value": "110.00", "currency": "RUB"},
+                "amount": {"value": "150.00", "currency": "RUB"},
                 "vat_code": 1
             }
         ]
@@ -41,13 +41,13 @@ async def pay_conf_wireguard(chat_id):
                                ),
                                LabeledPrice(
                                    label='Скидка',
-                                   amount=-50_00
+                                   amount=-10_00
                                )])
 
 
 async def pay_conf_trojan(chat_id):
     await bot.send_invoice(chat_id=chat_id,
-                           title='VPN TROJAN PROTOKOL',
+                           title='VPN PROTOKOL',
                            description='Безграничные возможности, которые откроются со всеми '
                                        'запрещенными в РФ соцсетями',
                            payload='payment_trojan',
@@ -65,5 +65,5 @@ async def pay_conf_trojan(chat_id):
                                ),
                                LabeledPrice(
                                    label='Скидка',
-                                   amount=-50_00
+                                   amount=-10_00
                                )])
